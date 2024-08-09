@@ -9,9 +9,12 @@ import {
   ModelProps, PackedFeatureTable, RelatedElementProps, RenderMode, SnapshotIModelRpcInterface, TileContentSource, TileFormat, TileReadStatus, ViewFlags,
 } from "@itwin/core-common";
 import {
-  GeometricModelState, ImdlModel, ImdlReader, IModelApp, IModelConnection, IModelTileContent, IModelTileTree, iModelTileTreeParamsFromJSON, MockRender,
-  parseImdlDocument, RenderGraphic, SnapshotConnection, SurfaceType, TileAdmin, TileRequest, TileTreeLoadStatus, ViewState,
+  GeometricModelState, ImdlReader, IModelApp, IModelConnection, IModelTileContent, IModelTileTree, iModelTileTreeParamsFromJSON, MockRender,
+  RenderGraphic, SnapshotConnection, TileAdmin, TileRequest, TileTreeLoadStatus, ViewState,
 } from "@itwin/core-frontend";
+import { ImdlModel } from "@itwin/core-frontend/lib/cjs/common/imdl/ImdlModel";
+import { parseImdlDocument } from "@itwin/core-frontend/lib/cjs/common/imdl/ParseImdlDocument";
+import { SurfaceType } from "@itwin/core-frontend/lib/cjs/common/internal/render/SurfaceParams";
 import { Batch, GraphicsArray, MeshGraphic, PolylineGeometry, Primitive, RenderOrder } from "@itwin/core-frontend/lib/cjs/webgl";
 import { ElectronApp } from "@itwin/core-electron/lib/cjs/ElectronFrontend";
 import { TestUtility } from "../../TestUtility";
@@ -556,7 +559,7 @@ async function waitUntil(condition: () => boolean): Promise<void> {
 }
 
 async function getGeometricModel(imodel: IModelConnection, modelId: Id64String): Promise<GeometricModelState> {
-  await imodel.models.load(modelId)!;
+  await imodel.models.load(modelId);
   const baseModel = imodel.models.getLoaded(modelId)!;
   expect(baseModel).not.to.be.undefined;
   const model = baseModel.asGeometricModel!;
@@ -674,7 +677,7 @@ describe("mirukuru TileTree", () => {
   });
 
   it("should load model's tile tree asynchronously", async () => {
-    const tree = getTileTree(imodel, "0x1c")!;
+    const tree = getTileTree(imodel, "0x1c");
     expect(tree).not.to.be.undefined;
   });
 
@@ -762,6 +765,9 @@ describe("TileAdmin", () => {
   class TileAdminApp extends MockRender.App {
     public static async start(props: TileAdmin.Props): Promise<IModelConnection> {
       await cleanup();
+
+      // The default is true which changes the expected tile tree Ids. Not relevant to these tests.
+      props.expandProjectExtents = false;
 
       if (ProcessDetector.isElectronAppFrontend) {
         // certa doesn't serve worker script.

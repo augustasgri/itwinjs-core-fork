@@ -12,7 +12,7 @@ import packageJson from "../../package.json";
 /** @public */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const ITWINJS_CORE_VERSION = packageJson.version as string;
-const COPYRIGHT_NOTICE = 'Copyright © 2017-2023 <a href="https://www.bentley.com" target="_blank" rel="noopener noreferrer">Bentley Systems, Inc.</a>';
+const COPYRIGHT_NOTICE = 'Copyright © 2017-2024 <a href="https://www.bentley.com" target="_blank" rel="noopener noreferrer">Bentley Systems, Inc.</a>';
 
 import { UiAdmin } from "@itwin/appui-abstract";
 import { AccessToken, BeDuration, BeEvent, BentleyStatus, DbResult, dispose, Guid, GuidString, Logger, ProcessDetector } from "@itwin/core-bentley";
@@ -136,7 +136,6 @@ export interface IModelAppOptions {
   realityDataAccess?: RealityDataAccess;
   /** If present, overrides where public assets are fetched. The default is to fetch assets relative to the current URL.
    * The path should always end with a trailing `/`.
-   * @beta
    */
   publicPath?: string;
 }
@@ -290,10 +289,12 @@ export class IModelApp {
   public static get uiAdmin() { return this._uiAdmin; }
   /** The requested security options for the frontend. */
   public static get securityOptions() { return this._securityOptions; }
-  /** The root URL for the assets 'public' folder.
-   * @beta
+
+  /** If present, overrides where public assets are fetched. The default is to fetch assets relative to the current URL.
+   * The path should always end with a trailing `/`.
    */
   public static get publicPath() { return this._publicPath; }
+
   /** The [[TelemetryManager]] for this session
    * @internal
    */

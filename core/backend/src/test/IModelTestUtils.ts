@@ -21,11 +21,11 @@ import { RequestNewBriefcaseArg } from "../BriefcaseManager";
 import { CheckpointProps, V1CheckpointManager } from "../CheckpointManager";
 import { ClassRegistry } from "../ClassRegistry";
 import {
-  AuxCoordSystem2d, BriefcaseDb, BriefcaseManager, CategorySelector, DisplayStyle2d, DisplayStyle3d, DrawingCategory, DrawingViewDefinition,
-  ECSqlStatement, Element, ElementAspect, ElementOwnsChildElements, ElementOwnsMultiAspects, ElementOwnsUniqueAspect, ElementUniqueAspect,
-  ExternalSource, ExternalSourceIsInRepository, FunctionalModel, FunctionalSchema, GroupModel, IModelDb, IModelHost, IModelJsFs,
-  InformationPartitionElement, Model, ModelSelector, OrthographicViewDefinition, PhysicalModel, PhysicalObject, PhysicalPartition,
-  RenderMaterialElement, SnapshotDb, SpatialCategory, SubCategory, SubjectOwnsPartitionElements, Texture, ViewDefinition,
+  _nativeDb, AuxCoordSystem2d, BriefcaseDb, BriefcaseLocalValue, BriefcaseManager, CategorySelector, ChannelControl, DisplayStyle2d, DisplayStyle3d, DrawingCategory,
+  DrawingViewDefinition, ECSqlStatement, Element, ElementAspect, ElementOwnsChildElements, ElementOwnsMultiAspects, ElementOwnsUniqueAspect,
+  ElementUniqueAspect, ExternalSource, ExternalSourceIsInRepository, FunctionalModel, FunctionalSchema, GroupModel, IModelDb, IModelHost,
+  IModelJsFs, InformationPartitionElement, Model, ModelSelector, OrthographicViewDefinition, PhysicalModel, PhysicalObject,
+  PhysicalPartition, RenderMaterialElement, SnapshotDb, SpatialCategory, SubCategory, SubjectOwnsPartitionElements, Texture, ViewDefinition,
 } from "../core-backend";
 import { DefinitionPartition, Drawing, DrawingGraphic, GeometryPart, LinkElement, PhysicalElement, RepositoryLink, Subject } from "../Element";
 import { DefinitionModel, DocumentListModel, DrawingModel, InformationRecordModel, SpatialLocationModel } from "../Model";
@@ -144,8 +144,14 @@ export class HubWrappers {
   }
 
   /** Helper to open a briefcase db directly with the BriefcaseManager API */
-  public static async downloadAndOpenBriefcase(args: RequestNewBriefcaseArg): Promise<BriefcaseDb> {
+  public static async downloadAndOpenBriefcase(args: RequestNewBriefcaseArg & { noLock?: true }): Promise<BriefcaseDb> {
     const props = await BriefcaseManager.downloadBriefcase(args);
+    if (args.noLock) {
+      const briefcase = await BriefcaseDb.open({ fileName: props.fileName });
+      briefcase[_nativeDb].saveLocalValue(BriefcaseLocalValue.NoLocking, "true");
+      briefcase.saveChanges();
+      briefcase.close();
+    }
     return BriefcaseDb.open({ fileName: props.fileName });
   }
 
@@ -297,6 +303,7 @@ export class IModelTestUtils {
     const seedDb: SnapshotDb = SnapshotDb.openFile(seedFileName);
     const testDb: SnapshotDb = SnapshotDb.createFrom(seedDb, testFileName);
     seedDb.close();
+    testDb.channels.addAllowedChannel(ChannelControl.sharedChannelName);
     return testDb;
   }
 
@@ -485,7 +492,7 @@ export class IModelTestUtils {
 
   /** Flushes the Txns in the TxnTable - this allows importing of schemas */
   public static flushTxns(iModelDb: IModelDb): boolean {
-    iModelDb.nativeDb.deleteAllTxns();
+    iModelDb[_nativeDb].deleteAllTxns();
     return true;
   }
 

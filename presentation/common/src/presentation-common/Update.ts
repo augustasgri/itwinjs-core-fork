@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the project root for license terms and full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the project root for license terms and full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 /** @packageDocumentation
  * @module Core
  */
@@ -9,10 +9,18 @@
 import { NodeKey, NodeKeyJSON } from "./hierarchy/Key";
 import { Node, NodeJSON, PartialNode, PartialNodeJSON } from "./hierarchy/Node";
 
-/** @alpha */
+/**
+ * A constant for indicating that a full update is required.
+ * @public
+ */
 export const UPDATE_FULL = "FULL";
 
-/** @alpha */
+/**
+ * A data structure that describes changes that need to be applied to the hierarchy and
+ * content components due to some changes on the backend.
+ *
+ * @public
+ */
 export interface UpdateInfo {
   [imodel: string]: {
     [rulesetId: string]: {
@@ -22,10 +30,16 @@ export interface UpdateInfo {
   };
 }
 
-/** @alpha */
+/**
+ * Information about a required hierarchy update.
+ * @public
+ */
 export type HierarchyUpdateInfo = typeof UPDATE_FULL;
 
-/** @alpha */
+/**
+ * Information about a required content update.
+ * @public
+ */
 export type ContentUpdateInfo = typeof UPDATE_FULL;
 
 /**
@@ -40,10 +54,12 @@ export type PartialHierarchyModificationJSON = NodeInsertionInfoJSON | NodeDelet
  * Information about a hierarchy change: insertion, deletion or node update.
  * @public
  */
+// eslint-disable-next-line deprecation/deprecation
 export type PartialHierarchyModification = NodeInsertionInfo | NodeDeletionInfo | NodeUpdateInfo;
 
 /** @public */
-export namespace PartialHierarchyModification { // eslint-disable-line @typescript-eslint/no-redeclare
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export namespace PartialHierarchyModification {
   /**
    * Serialize given object to JSON.
    * @deprecated in 3.x. Use [[PartialHierarchyModification]]

@@ -4,9 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 import { assert } from "chai";
 import { DbResult, Id64 } from "@itwin/core-bentley";
-import { DbQueryRequest, DbQueryResponse, DbRequestExecutor, DbRequestKind, ECSqlReader, QueryBinder, QueryOptionsBuilder, QueryRowFormat } from "@itwin/core-common";
+import { DbQueryRequest, DbQueryResponse, DbRequestExecutor, DbRequestKind, ECSqlReader, QueryBinder, QueryOptionsBuilder, QueryPropertyMetaData, QueryRowFormat } from "@itwin/core-common";
 import { ConcurrentQuery } from "../../ConcurrentQuery";
-import { ECSqlStatement, IModelDb, SnapshotDb } from "../../core-backend";
+import { _nativeDb, ECSqlStatement, IModelDb, SnapshotDb } from "../../core-backend";
 import { IModelTestUtils } from "../IModelTestUtils";
 import { SequentialLogMatcher } from "../SequentialLogMatcher";
 
@@ -216,8 +216,8 @@ describe("ECSql Query", () => {
     let successful = 0;
     let rowCount = 0;
     try {
-      ConcurrentQuery.shutdown(imodel1.nativeDb);
-      ConcurrentQuery.resetConfig(imodel1.nativeDb, { globalQuota: { time: 1 }, ignoreDelay: false });
+      ConcurrentQuery.shutdown(imodel1[_nativeDb]);
+      ConcurrentQuery.resetConfig(imodel1[_nativeDb], { globalQuota: { time: 1 }, ignoreDelay: false });
 
       const scheduleQuery = async (delay: number) => {
         return new Promise<void>(async (resolve, reject) => {
@@ -253,8 +253,8 @@ describe("ECSql Query", () => {
       assert.isAtLeast(successful, 1, "successful should be at least 1");
       assert.isAtLeast(rowCount, 1, "rowCount should be at least 1");
     } finally {
-      ConcurrentQuery.shutdown(imodel1.nativeDb);
-      ConcurrentQuery.resetConfig(imodel1.nativeDb);
+      ConcurrentQuery.shutdown(imodel1[_nativeDb]);
+      ConcurrentQuery.resetConfig(imodel1[_nativeDb]);
     }
   });
   it("concurrent query should retry on timeout", async () => {
@@ -268,10 +268,10 @@ describe("ECSql Query", () => {
     }
 
     // Set time to 1 sec to simulate a timeout scenario
-    ConcurrentQuery.resetConfig(imodel1.nativeDb, { globalQuota: { time: 1 }, ignoreDelay: false });
+    ConcurrentQuery.resetConfig(imodel1[_nativeDb], { globalQuota: { time: 1 }, ignoreDelay: false });
     const executor = {
       execute: async (req: DbQueryRequest) => {
-        return ConcurrentQuery.executeQueryRequest(imodel1.nativeDb, req);
+        return ConcurrentQuery.executeQueryRequest(imodel1[_nativeDb], req);
       },
     };
     const request: DbQueryRequest = {
@@ -336,6 +336,39 @@ describe("ECSql Query", () => {
     assert.equal(reader.stats.backendRowsReturned, 46);
     assert.isTrue(reader.stats.backendCpuTime > 0);
     assert.isTrue(reader.stats.backendMemUsed > 1000);
+  });
+  it("concurrent query access string meta data", async () => {
+    let reader = imodel1.createQueryReader("SELECT e.ECClassId FROM bis.Element e");
+    let props: QueryPropertyMetaData[] = await reader.getMetaData();
+    assert.equal(props.length, 1);
+    assert.equal(props[0].accessString, "ECClassId");
+
+    reader = imodel1.createQueryReader("SELECT Model.Id, e.Model.Id, Model.RelECClassId, e.Model.RelECClassId FROM bis.Element e");
+    props = await reader.getMetaData();
+    assert.equal(props.length, 4);
+    assert.equal(props[0].accessString, "Model.Id");
+    assert.equal(props[1].accessString, "Model.Id");
+    assert.equal(props[2].accessString, "Model.RelECClassId");
+    assert.equal(props[3].accessString, "Model.RelECClassId");
+
+    reader = imodel1.createQueryReader("SELECT Origin.X, Origin.Y, TypeDefinition FROM bis.GeometricElement2d ge");
+    props = await reader.getMetaData();
+    assert.equal(props.length, 3);
+    assert.equal(props[0].accessString, "Origin.X");
+    assert.equal(props[1].accessString, "Origin.Y");
+    assert.equal(props[2].accessString, "TypeDefinition");
+    assert.equal(props[2].typeName, "navigation");
+
+    reader = imodel1.createQueryReader("SELECT 1, 1 + 6, * FROM (VALUES(1,2), (2,3))");
+    props = await reader.getMetaData();
+    assert.equal(props.length, 4);
+    assert.equal(props[0].accessString, "1");
+    assert.equal(props[0].jsonName, "1");
+    assert.equal(props[1].accessString, "1 + 6");
+    assert.equal(props[1].typeName, "double");
+    assert.equal(props[2].accessString, "1_1");
+    assert.equal(props[2].jsonName, "1_1");
+    assert.equal(props[3].accessString, "2");
   });
   it("concurrent query quota", async () => {
     let reader = imodel1.createQueryReader("SELECT * FROM BisCore.element", undefined, { limit: { count: 4 } });

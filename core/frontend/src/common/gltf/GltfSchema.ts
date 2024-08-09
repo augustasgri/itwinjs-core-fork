@@ -211,11 +211,11 @@ export interface GltfNodeBaseProps {
   /** A 4x4 column-major transformation matrix. Mutually exclusive with [[rotation]], [[scale]], and [[translation]]. */
   matrix?: number[];
   /** Unit quaternion as [x, y, z, w], where w is the scalar. */
-  rotation?: number[];
+  rotation?: [number, number, number, number];
   /** Non-uniform scale as [x, y, z]. */
-  scale?: number[];
+  scale?: [number, number, number];
   /** Translation as [x, y, z]. */
-  translation?: number[];
+  translation?: [number, number, number];
 }
 
 /** glTF 1.0 representation of a [[GltfNode]]. Unlike a [[Gltf2Node]], a Gltf1Node may refer to any number of [[GltfMesh]]es.
@@ -243,6 +243,40 @@ export interface Gltf2Node extends GltfChildOfRootProperty, GltfNodeBaseProps {
   meshes?: never;
   /** Morph targets - currently ignored. */
   weights?: number[];
+  extensions?: GltfExtensions & {
+    /** The [EXT_mesh_gpu_instancing](https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Vendor/EXT_mesh_gpu_instancing/README.md) extension permits multiple
+     * instances of the same mesh to be rendered with different translation, rotation, and/or scale.
+     * All of the attribute accessors must have the same count (which indicates the number of instances to be drawn).
+     * All attributes are optional (though omitting all of them would be silly).
+     */
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    EXT_mesh_gpu_instancing?: {
+      attributes?: {
+        /** VEC3; FLOAT */
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        TRANSLATION?: GltfId;
+        /** VEC4 (quaternion); FLOAT, normalized BYTE, or normalized SHORT */
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        ROTATION?: GltfId;
+        /** VEC3; FLOAT */
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        SCALE?: GltfId;
+      };
+    };
+    /** The [EXT_instance_features](https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_instance_features/README.md)
+     * extension permits assigning identifiers to individual instances of a mesh, which can be used to look up per-instance data in a property table.
+     */
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    EXT_instance_features?: {
+      featureIds: {
+        attribute?: number;
+        featureCount: number;
+        label?: string;
+        nullFeatureId?: number;
+        propertyTable: number;
+      }[];
+    };
+  };
 }
 
 /** Describes a node in a [[GltfScene]]. Each node may be associated with zero, one (glTF 2.0), or any number of (glTF 1.0) [[GltfMesh]]es.
@@ -462,7 +496,7 @@ export interface Gltf2Material extends GltfChildOfRootProperty {
         // Diffuse texture.
         // eslint-disable-next-line @typescript-eslint/naming-convention
         u_diffuse?: { index: number, texCoord: number };
-        [k: string]: unknown | undefined;
+        [k: string]: unknown;
       };
     };
   };
@@ -481,6 +515,31 @@ export function isGltf1Material(material: GltfMaterial): material is Gltf1Materi
 export interface GltfBuffer extends GltfChildOfRootProperty {
   uri?: string;
   byteLength?: number;
+  extensions?: GltfExtensions & {
+    // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Vendor/EXT_meshopt_compression/README.md
+    EXT_meshopt_compression?: { // eslint-disable-line @typescript-eslint/naming-convention
+      fallback?: boolean;
+    };
+  };
+}
+
+/** @internal */
+export type ExtMeshoptCompressionMode = "ATTRIBUTES" | "TRIANGLES" | "INDICES";
+
+/** @internal */
+export type ExtMeshoptCompressionFilter = "NONE" | "OCTAHEDRAL" | "QUATERNION";
+
+/** https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Vendor/EXT_meshopt_compression/README.md
+ * @internal
+*/
+export interface GltfBufferViewMeshoptCompressionExtension {
+  buffer: number;
+  byteOffset?: number;
+  byteLength: number;
+  byteStride: number;
+  count: number;
+  mode: ExtMeshoptCompressionMode;
+  filter?: ExtMeshoptCompressionFilter;
 }
 
 /** @internal */
@@ -490,6 +549,9 @@ export interface GltfBufferViewProps extends GltfChildOfRootProperty {
   byteOffset?: number;
   byteStride?: number;
   target?: GltfBufferTarget;
+  extensions?: GltfExtensions & {
+    EXT_meshopt_compression?: GltfBufferViewMeshoptCompressionExtension; // eslint-disable-line @typescript-eslint/naming-convention
+  };
 }
 
 /** @internal */
@@ -517,7 +579,9 @@ export interface GltfAccessor extends GltfChildOfRootProperty {
 
 /** @internal */
 export namespace GltfStructuralMetadata {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   export type ClassPropertyType = "SCALAR" | "STRING" | "BOOLEAN" | "ENUM" | "VEC2" | "VEC3" | "VEC4" | "MAT2" | "MAT3" | "MAT4" | string;
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   export type ClassPropertyComponentType = "INT8" | "UINT8" | "INT16" | "UINT16" | "INT32" | "UINT32" | "INT64" | "UINT64" | "FLOAT32" | "FLOAT64" | string;
 
   // Ignoring VECN and MATN types because they complicate offset, scale, min, and max, all of which are otherwise only relevant to SCALAR in which case they're all just numbers.
@@ -549,7 +613,7 @@ export namespace GltfStructuralMetadata {
   export interface Enum extends GltfProperty {
     values: EnumValue[];
     // Default: UINT16
-    valueType?: "INT8" | "UINT8" | "INT16" | "UINT16" | "INT32" | "UINT32" | "INT64" | "UINT64" | string;
+    valueType?: "INT8" | "UINT8" | "INT16" | "UINT16" | "INT32" | "UINT32" | "INT64" | "UINT64" | string;  // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
     name?: string;
     description?: string;
   }
@@ -567,7 +631,9 @@ export namespace GltfStructuralMetadata {
     name?: string;
     description?: string;
     version?: string;
-    classes?: Class[];
+    classes?: {
+      [classId: string]: Class | undefined;
+    };
     enums?: Enum[];
   }
 
@@ -576,8 +642,8 @@ export namespace GltfStructuralMetadata {
     values: GltfId;
     arrayOffsets?: GltfId;
     stringOffsets?: GltfId;
-    arrayOffsetType?: "UINT8" | "UINT16" | "UINT32" | "UINT64" | string;
-    stringOffsetType?: "UINT8" | "UINT16" | "UINT32" | "UINT64" | string;
+    arrayOffsetType?: "UINT8" | "UINT16" | "UINT32" | "UINT64" | string;  // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
+    stringOffsetType?: "UINT8" | "UINT16" | "UINT32" | "UINT64" | string;  // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
     offset?: number;
     scale?: number;
     min?: number;

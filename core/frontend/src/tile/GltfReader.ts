@@ -10,36 +10,36 @@ import {
   assert, ByteStream, compareBooleans, compareNumbers, compareStrings, Dictionary, JsonUtils, Logger, utf8ToString,
 } from "@itwin/core-bentley";
 import {
-  Angle, IndexedPolyface, Matrix3d, Point2d, Point3d, Point4d, Polyface, Range2d, Range3d, Transform, Vector3d,
+  Angle, IndexedPolyface, Matrix3d, Point2d, Point3d, Point4d, Range2d, Range3d, Transform, Vector3d,
 } from "@itwin/core-geometry";
 import {
   AxisAlignedBox3d, BatchType, ColorDef, ElementAlignedBox3d, Feature, FeatureIndex, FeatureIndexType, FeatureTable, FillFlags, GlbHeader, ImageSource, LinePixels, MeshEdge,
   MeshEdges, MeshPolyline, MeshPolylineList, OctEncodedNormal, PackedFeatureTable, QParams2d, QParams3d, QPoint2dList,
-  QPoint3dList, Quantization, RenderMaterial, RenderTexture, TextureMapping, TextureTransparency, TileFormat, TileReadStatus,
+  QPoint3dList, Quantization, RenderMaterial, RenderMode, RenderTexture, TextureMapping, TextureTransparency, TileFormat, TileReadStatus, ViewFlagOverrides,
 } from "@itwin/core-common";
 import { IModelConnection } from "../IModelConnection";
 import { IModelApp } from "../IModelApp";
 import { GraphicBranch } from "../render/GraphicBranch";
-import { PickableGraphicOptions } from "../render/GraphicBuilder";
-import { InstancedGraphicParams } from "../render/InstancedGraphicParams";
+import { InstancedGraphicParams } from "../common/render/InstancedGraphicParams";
 import { RealityMeshParams } from "../render/RealityMeshParams";
-import { Mesh } from "../render/primitives/mesh/MeshPrimitives";
-import { Triangle } from "../render/primitives/Primitives";
+import { Mesh } from "../common/internal/render/MeshPrimitives";
+import { Triangle } from "../common/internal/render/Primitives";
 import { RenderGraphic } from "../render/RenderGraphic";
 import { RenderSystem } from "../render/RenderSystem";
-import { RealityTileGeometry, TileContent } from "./internal";
+import { BatchedTileIdMap, decodeMeshoptBuffer, RealityTileGeometry, TileContent } from "./internal";
 import type { DracoLoader, DracoMesh } from "@loaders.gl/draco";
 import { CreateRenderMaterialArgs } from "../render/CreateRenderMaterialArgs";
-import { DisplayParams } from "../common/render/primitives/DisplayParams";
+import { DisplayParams } from "../common/internal/render/DisplayParams";
 import { FrontendLoggerCategory } from "../common/FrontendLoggerCategory";
 import { getImageSourceFormatForMimeType, imageBitmapFromImageSource, imageElementFromImageSource, tryImageElementFromUrl } from "../common/ImageUtil";
-import { MeshPrimitiveType } from "../common/render/primitives/MeshPrimitive";
-import { PointCloudArgs } from "../render/primitives/PointCloudPrimitive";
+import { MeshPrimitiveType } from "../common/internal/render/MeshPrimitive";
+import { PointCloudArgs } from "../common/internal/render/PointCloudPrimitive";
 import { TextureImageSource } from "../common/render/TextureParams";
 import {
-  DracoMeshCompression, getGltfNodeMeshIds, GltfAccessor, GltfBuffer, GltfBufferViewProps, GltfDataType, GltfDictionary, gltfDictionaryIterator, GltfDocument, GltfId,
-  GltfImage, GltfMaterial, GltfMesh, GltfMeshMode, GltfMeshPrimitive, GltfNode, GltfSampler, GltfScene, GltfTechniqueState, GltfTexture, GltfWrapMode, isGltf1Material, traverseGltfNodes,
+  DracoMeshCompression, getGltfNodeMeshIds, Gltf2Node, GltfAccessor, GltfBuffer, GltfBufferViewProps, GltfDataType, GltfDictionary, gltfDictionaryIterator, GltfDocument, GltfId,
+  GltfImage, GltfMaterial, GltfMesh, GltfMeshMode, GltfMeshPrimitive, GltfNode, GltfSampler, GltfScene, GltfStructuralMetadata, GltfTechniqueState, GltfTexture, GltfWrapMode, isGltf1Material, traverseGltfNodes,
 } from "../common/gltf/GltfSchema";
+import { PickableGraphicOptions } from "../common/render/BatchOptions";
 
 /* eslint-disable no-restricted-syntax */
 
@@ -296,6 +296,18 @@ function colorFromMaterial(material: GltfMaterial, isTransparent: boolean): Colo
   return color;
 }
 
+function trsMatrix(translation: [number, number, number] | undefined, rotation: [number, number, number, number] | undefined, scale: [number, number, number] | undefined, result?: Transform): Transform {
+  // SPEC: To compose the local transformation matrix, TRS properties MUST be converted to matrices and postmultiplied in the T * R * S order;
+  // first the scale is applied to the vertices, then the rotation, and then the translation.
+  const scaleTf = Transform.createRefs(undefined, scale ? Matrix3d.createScale(scale[0], scale[1], scale[2]) : Matrix3d.identity);
+  const rotTf = Transform.createRefs(undefined, rotation ? Matrix3d.createFromQuaternion(Point4d.create(rotation[0], rotation[1], rotation[2], rotation[3])) : Matrix3d.identity);
+  rotTf.matrix.transposeInPlace(); // See comment on Matrix3d.createFromQuaternion
+  const transTf = Transform.createTranslation(translation ? new Point3d(translation[0], translation[1], translation[2]) : Point3d.createZero());
+  const tf = rotTf.multiplyTransformTransform(scaleTf, result);
+  transTf.multiplyTransformTransform(tf, tf);
+  return tf;
+}
+
 class TransformStack {
   private readonly _stack: Array<Transform | undefined> = [];
 
@@ -324,15 +336,7 @@ class TransformStack {
 
       nodeTransform = Transform.createOriginAndMatrix(origin, matrix);
     } else if (node.rotation || node.scale || node.translation) {
-      // SPEC: To compose the local transformation matrix, TRS properties MUST be converted to matrices and postmultiplied in the T * R * S order;
-      // first the scale is applied to the vertices, then the rotation, and then the translation.
-      const scale = Transform.createRefs(undefined, node.scale ? Matrix3d.createScale(node.scale[0], node.scale[1], node.scale[2]) : Matrix3d.identity);
-      const rot = Transform.createRefs(undefined, node.rotation ? Matrix3d.createFromQuaternion(Point4d.create(node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3])) : Matrix3d.identity);
-      rot.matrix.transposeInPlace(); // See comment on Matrix3d.createFromQuaternion
-      const trans = Transform.createTranslation(node.translation ? new Point3d(node.translation[0], node.translation[1], node.translation[2]) : Point3d.createZero());
-
-      nodeTransform = scale.multiplyTransformTransform(rot);
-      trans.multiplyTransformTransform(nodeTransform, nodeTransform);
+      nodeTransform = trsMatrix(node.translation, node.rotation, node.scale);
     }
 
     const top = this.transform;
@@ -374,6 +378,9 @@ export interface GltfReaderArgs {
    * Reality meshes are simpler but do not support some features like lighting.
    */
   vertexTableRequired?: boolean;
+  /** A table structure to store the Gltf structural metadata if present.
+   */
+  idMap?: BatchedTileIdMap;
 }
 
 interface TextureKey {
@@ -394,6 +401,20 @@ function compareTextureKeys(lhs: TextureKey, rhs: TextureKey): number {
 
   assert("number" === typeof lhs.id && "number" === typeof rhs.id);
   return compareNumbers(lhs.id, rhs.id);
+}
+
+interface StructuralMetadataTableEntries{
+  name: string;
+  values: any[];
+};
+
+interface StructuralMetadataTable{
+  name: string;
+  entries: StructuralMetadataTableEntries[];
+};
+
+interface StructuralMetadata{
+  tables: StructuralMetadataTable[];
 }
 
 /** Deserializes [glTF](https://www.khronos.org/gltf/).
@@ -417,11 +438,15 @@ export abstract class GltfReader {
   private readonly _resolvedTextures = new Dictionary<TextureKey, RenderTexture | false>((lhs, rhs) => compareTextureKeys(lhs, rhs));
   private readonly _dracoMeshes = new Map<DracoMeshCompression, DracoMesh>();
   private _containsPointCloud = false;
+  protected _instanceFeatures: Feature[] = [];
+  protected _instanceElementIdToFeatureId: Map<string, number> = new Map<string, number>();
+  protected _structuralMetadata?: StructuralMetadata;
+  protected readonly _idMap?: BatchedTileIdMap;
 
   protected get _nodes(): GltfDictionary<GltfNode> { return this._glTF.nodes ?? emptyDict; }
   protected get _meshes(): GltfDictionary<GltfMesh> { return this._glTF.meshes ?? emptyDict; }
   protected get _accessors(): GltfDictionary<GltfAccessor> { return this._glTF.accessors ?? emptyDict; }
-  protected get _bufferViews(): GltfDictionary<GltfBufferViewProps> { return this._glTF.bufferViews ?? emptyDict; }
+  protected get _bufferViews(): GltfDictionary<GltfBufferViewProps & { resolvedBuffer?: Uint8Array }> { return this._glTF.bufferViews ?? emptyDict; }
   protected get _materials(): GltfDictionary<GltfMaterial> { return this._glTF.materials ?? emptyDict; }
   protected get _samplers(): GltfDictionary<GltfSampler> { return this._glTF.samplers ?? emptyDict; }
   protected get _textures(): GltfDictionary<GltfTexture> { return this._glTF.textures ?? emptyDict; }
@@ -448,6 +473,10 @@ export abstract class GltfReader {
    */
   public traverseScene(): Iterable<GltfNode> {
     return this.traverseNodes(this._sceneNodes);
+  }
+
+  protected get viewFlagOverrides(): ViewFlagOverrides | undefined {
+    return undefined;
   }
 
   private getTileTransform(transformToRoot?: Transform, pseudoRtcBias?: Vector3d): Transform | undefined {
@@ -481,6 +510,13 @@ export abstract class GltfReader {
     else
       this._computedContentRange = undefined;
 
+    // Save feature table model id in case we need to recreate it after reading instances
+    const featureTableModelId = featureTable?.modelId;
+    // Flush feature table if instance features are used
+    if(this._structuralMetadata && this._glTF.extensionsUsed?.includes("EXT_instance_features") && this._idMap){
+      featureTable = undefined;
+    }
+
     // ###TODO this looks like a hack? Why does it assume the first node's transform is special, or that the transform will be specified as a matrix instead of translation+rot+scale?
     if (this._returnToCenter || this._nodes[0]?.matrix || (pseudoRtcBias && pseudoRtcBias.magnitude() < 1.0E5))
       pseudoRtcBias = undefined;
@@ -495,6 +531,15 @@ export abstract class GltfReader {
         return { readStatus, isLeaf };
     }
 
+    // Creates a feature table based on instance features
+    // The table must be created after reading instances, since the maximum number of features is not known until all instances have been read.
+    if(this._instanceFeatures.length > 0 && this._idMap){
+      featureTable = new FeatureTable(this._instanceFeatures.length, featureTableModelId);
+      for(let instanceFeatureId = 0; instanceFeatureId < this._instanceFeatures.length; instanceFeatureId++){
+        featureTable.insertWithIndex(this._instanceFeatures[instanceFeatureId], instanceFeatureId);
+      }
+    }
+
     if (0 === renderGraphicList.length)
       return { readStatus: TileReadStatus.InvalidTileData, isLeaf };
 
@@ -505,18 +550,27 @@ export abstract class GltfReader {
       renderGraphic = this._system.createGraphicList(renderGraphicList);
 
     const transform = this.getTileTransform(transformToRoot, pseudoRtcBias);
+
+    // Compute range in tileset/world space.
     let range = contentRange;
     const invTransform = transform?.inverse();
     if (invTransform)
       range = invTransform.multiplyRange(contentRange);
 
+    // The batch range needs to be in tile coordinate space.
+    // If we computed the content range ourselves, it's already in tile space.
+    // If the content range was supplied by the caller, it's in tileset space and needs to be transformed to tile space.
     if (featureTable)
-      renderGraphic = this._system.createBatch(renderGraphic, PackedFeatureTable.pack(featureTable), range);
+      renderGraphic = this._system.createBatch(renderGraphic, PackedFeatureTable.pack(featureTable), this._computedContentRange ? contentRange : range);
 
-    if (transform) {
+    const viewFlagOverrides = this.viewFlagOverrides;
+    if (transform || viewFlagOverrides) {
       const branch = new GraphicBranch(true);
+      if (viewFlagOverrides)
+        branch.setViewFlagOverrides(viewFlagOverrides);
+
       branch.add(renderGraphic);
-      renderGraphic = this._system.createBranch(branch, transform);
+      renderGraphic = this._system.createBranch(branch, transform ?? Transform.createIdentity());
     }
 
     return {
@@ -531,7 +585,7 @@ export abstract class GltfReader {
 
   public readGltfAndCreateGeometry(transformToRoot?: Transform, needNormals = false, needParams = false): RealityTileGeometry {
     const transformStack = new TransformStack(this.getTileTransform(transformToRoot));
-    const polyfaces: Polyface[] = [];
+    const polyfaces: IndexedPolyface[] = [];
     for (const nodeKey of this._sceneNodes) {
       const node = this._nodes[nodeKey];
       if (node)
@@ -546,7 +600,7 @@ export abstract class GltfReader {
       return this._system.createPointCloud(gltfMesh, this._iModel);
 
     if (!gltfMesh.points || !gltfMesh.pointRange)
-      return gltfMesh.primitive.getGraphics(this._system, instances);
+      return this._system.createMeshGraphics(gltfMesh.primitive, instances);
 
     const realityMeshPrimitive = (this._vertexTableRequired || instances) ? undefined : RealityMeshParams.fromGltfMesh(gltfMesh);
     if (realityMeshPrimitive) {
@@ -572,16 +626,159 @@ export abstract class GltfReader {
       for (const normal of gltfMesh.normals)
         mesh.normals.push(new OctEncodedNormal(normal));
 
-    return mesh.getGraphics(this._system, instances);
+    return this._system.createMeshGraphics(mesh, instances);
   }
 
-  private readNodeAndCreateGraphics(renderGraphicList: RenderGraphic[], node: GltfNode, featureTable: FeatureTable | undefined, transformStack: TransformStack, instances?: InstancedGraphicParams, pseudoRtcBias?: Vector3d): TileReadStatus {
+  private readInstanceAttributes(node: Gltf2Node, featureTable: FeatureTable | undefined): InstancedGraphicParams | undefined {
+    const ext = node.extensions?.EXT_mesh_gpu_instancing;
+    if (!ext || !ext.attributes) {
+      return undefined;
+    }
+
+    const translationsView = this.getBufferView(ext.attributes, "TRANSLATION");
+    const translations = translationsView?.toBufferData(GltfDataType.Float);
+    const rotations = this.getBufferView(ext.attributes, "ROTATION")?.toBufferData(GltfDataType.Float);
+    const scales = this.getBufferView(ext.attributes, "SCALE")?.toBufferData(GltfDataType.Float);
+
+    // All attributes must specify the same count, count must be greater than zero, and at least one attribute must be specified.
+    const count = translations?.count ?? rotations?.count ?? scales?.count;
+    if (!count || (rotations && rotations.count !== count) || (scales && scales.count !== count)) {
+      return undefined;
+    }
+
+    const transformCenter = new Point3d();
+    const trMin = translationsView?.accessor.min;
+    const trMax = translationsView?.accessor.max;
+    if (trMin && trMax) {
+      const half = (idx: number): number => trMin[idx] + (trMax[idx] - trMin[idx]) / 2;
+      transformCenter.set(half(0), half(1), half(2));
+    }
+
+    const getTranslation = (index: number): [number, number, number] | undefined => {
+      if (!translations) {
+        return undefined;
+      }
+
+      index *= 3;
+      return [
+        translations.buffer[index + 0] - transformCenter.x,
+        translations.buffer[index + 1] - transformCenter.y,
+        translations.buffer[index + 2] - transformCenter.z,
+      ];
+    };
+
+    const getRotation = (index: number): [number, number, number, number] | undefined => {
+      index *= 4;
+      return rotations ? [rotations.buffer[index], rotations.buffer[index + 1], rotations.buffer[index + 2], rotations.buffer[index + 3]] : undefined;
+    };
+
+    const getScale = (index: number): [number, number, number] | undefined => {
+      index *= 3;
+      return scales ? [scales.buffer[index], scales.buffer[index + 1], scales.buffer[index + 2]] : undefined;
+    };
+
+    const transforms = new Float32Array(3 * 4 * count);
+    const transform = Transform.createIdentity();
+    for (let i = 0; i < count; i++) {
+      const tf = trsMatrix(getTranslation(i), getRotation(i), getScale(i), transform);
+      const idx = i * 3 * 4;
+      transforms[idx + 0] = tf.matrix.coffs[0];
+      transforms[idx + 1] = tf.matrix.coffs[1];
+      transforms[idx + 2] = tf.matrix.coffs[2];
+      transforms[idx + 3] = tf.origin.x;
+      transforms[idx + 4] = tf.matrix.coffs[3];
+      transforms[idx + 5] = tf.matrix.coffs[4];
+      transforms[idx + 6] = tf.matrix.coffs[5];
+      transforms[idx + 7] = tf.origin.y;
+      transforms[idx + 8] = tf.matrix.coffs[6];
+      transforms[idx + 9] = tf.matrix.coffs[7];
+      transforms[idx + 10] = tf.matrix.coffs[8];
+      transforms[idx + 11] = tf.origin.z;
+    }
+
+    let featureIds = ((featureTable && featureTable.isUniform)) ? new Uint8Array(3 * count) : undefined;
+
+    // Resolve instance features if the EXT_instance_features if present
+    const instanceFeaturesExt = node.extensions?.EXT_instance_features;
+    if(this._structuralMetadata && instanceFeaturesExt && this._idMap){
+      if(!featureIds)
+        featureIds = new Uint8Array(3 * count);
+      // Resolve feature buffers before creating instance table
+      const featureBuffers = new Map<number, GltfDataBuffer>();
+      for(const featureIdDesc of instanceFeaturesExt.featureIds){
+
+        if(featureIdDesc.attribute !== undefined){
+          const bufferView = this.getBufferView(ext.attributes, `_FEATURE_ID_${  featureIdDesc.attribute}`);
+          if(bufferView){
+            const bufferData = bufferView.toBufferData(bufferView.type)?.buffer;
+            if(bufferData){
+              featureBuffers.set(featureIdDesc.attribute, bufferData);
+            }
+          }
+        }
+      }
+
+      for(let localInstanceId = 0; localInstanceId < count; localInstanceId++){
+
+        const instanceProps: any = {};
+        for(const featureIdDesc of instanceFeaturesExt.featureIds){
+
+          const table = this._structuralMetadata.tables[featureIdDesc.propertyTable];
+          instanceProps[table.name] = {};
+          // If the attribute is not defined, then the feature id corresponds to the instance id
+          if(featureIdDesc.attribute === undefined){
+            for(const entries of table.entries){
+              if(entries.values[localInstanceId] !== undefined){
+                instanceProps[table.name][entries.name] = entries.values[localInstanceId];
+              }
+            }
+          } else if(featureBuffers.has(featureIdDesc.attribute)) {
+            const featureBuffer = featureBuffers.get(featureIdDesc.attribute);
+            if(!featureBuffer){
+              continue;
+            }
+            const featureId = featureBuffer[localInstanceId];
+
+            if(featureIdDesc.nullFeatureId !== undefined && featureId === featureIdDesc.nullFeatureId){
+              continue;
+            }
+
+            for(const entries of table.entries){
+              if(entries.values[featureId] !== undefined){
+                instanceProps[table.name][entries.name] = entries.values[featureId];
+              }
+            }
+          }
+        }
+
+        const instanceElementId = this._idMap.getBatchId(instanceProps);
+
+        // If the element id is already assigned to a previous instance,
+        // reuse the previous feature id to avoid collision in the feature table
+        if(!this._instanceElementIdToFeatureId.has(instanceElementId)){
+          this._instanceElementIdToFeatureId.set(instanceElementId, this._instanceFeatures.length);
+          this._instanceFeatures.push(new Feature(instanceElementId));
+        }
+
+        const instanceFeatureId = this._instanceElementIdToFeatureId.get(instanceElementId)!;
+        featureIds[localInstanceId * 3 + 0] = instanceFeatureId & 0xFF;
+        featureIds[localInstanceId * 3 + 1] = (instanceFeatureId >> 8) & 0xFF;
+        featureIds[localInstanceId * 3 + 2] = (instanceFeatureId >> 16) & 0xFF;
+      }
+    }
+
+    return { count, transforms, transformCenter, featureIds };
+  }
+
+  private readNodeAndCreateGraphics(renderGraphicList: RenderGraphic[], node: GltfNode, featureTable: FeatureTable | undefined, transformStack: TransformStack, batchInstances?: InstancedGraphicParams, pseudoRtcBias?: Vector3d): TileReadStatus {
     if (undefined === node)
       return TileReadStatus.InvalidTileData;
 
     // IMPORTANT: Do not return without popping this node from the stack.
     transformStack.push(node);
     const thisTransform = transformStack.transform;
+
+    const nodeInstances = !batchInstances && undefined !== node.mesh ? this.readInstanceAttributes(node, featureTable) : undefined;
 
     /**
      * This is a workaround for tiles generated by
@@ -598,16 +795,16 @@ export abstract class GltfReader {
     for (const meshKey of getGltfNodeMeshIds(node)) {
       const nodeMesh = this._meshes[meshKey];
       if (nodeMesh?.primitives) {
-        const meshes = this.readMeshPrimitives(node, featureTable, thisTransform, thisBias);
+        const meshes = this.readMeshPrimitives(node, featureTable, thisTransform, thisBias, nodeInstances);
 
         let renderGraphic: RenderGraphic | undefined;
         if (0 !== meshes.length) {
           if (1 === meshes.length) {
-            renderGraphic = this.graphicFromMeshData(meshes[0], instances);
+            renderGraphic = this.graphicFromMeshData(meshes[0], batchInstances ?? nodeInstances);
           } else {
             const thisList: RenderGraphic[] = [];
             for (const mesh of meshes) {
-              renderGraphic = this.graphicFromMeshData(mesh, instances);
+              renderGraphic = this.graphicFromMeshData(mesh, batchInstances ?? nodeInstances);
               if (undefined !== renderGraphic)
                 thisList.push(renderGraphic);
             }
@@ -633,7 +830,7 @@ export abstract class GltfReader {
       for (const childId of node.children) {
         const child = this._nodes[childId];
         if (child)
-          this.readNodeAndCreateGraphics(renderGraphicList, child, featureTable, transformStack, instances);
+          this.readNodeAndCreateGraphics(renderGraphicList, child, featureTable, transformStack, batchInstances ?? nodeInstances);
       }
     }
 
@@ -641,7 +838,7 @@ export abstract class GltfReader {
     return TileReadStatus.Success;
   }
 
-  private readNodeAndCreatePolyfaces(polyfaces: Polyface[], node: GltfNode, transformStack: TransformStack, needNormals: boolean, needParams: boolean): void {
+  private readNodeAndCreatePolyfaces(polyfaces: IndexedPolyface[], node: GltfNode, transformStack: TransformStack, needNormals: boolean, needParams: boolean): void {
     // IMPORTANT: Do not return without popping this node from the stack.
     transformStack.push(node);
     const meshes = this.readMeshPrimitives(node);
@@ -663,7 +860,7 @@ export abstract class GltfReader {
     }
   }
 
-  private polyfaceFromGltfMesh(mesh: GltfMeshData, transform: Transform | undefined , needNormals: boolean, needParams: boolean): Polyface | undefined {
+  private polyfaceFromGltfMesh(mesh: GltfMeshData, transform: Transform | undefined , needNormals: boolean, needParams: boolean): IndexedPolyface | undefined {
     if (!mesh.pointQParams || !mesh.points || !mesh.indices)
       return undefined;
 
@@ -715,11 +912,18 @@ export abstract class GltfReader {
 
       const bufferViewAccessorValue = accessor.bufferView;
       const bufferView = undefined !== bufferViewAccessorValue ? this._bufferViews[bufferViewAccessorValue] : undefined;
-      if (!bufferView || undefined === bufferView.buffer)
+      if (!bufferView)
         return undefined;
 
-      const buffer = this._buffers[bufferView.buffer];
-      const bufferData = buffer?.resolvedBuffer;
+      let bufferData = bufferView.resolvedBuffer;
+      if (!bufferData) {
+        if (undefined === bufferView.buffer)
+          return undefined;
+
+        const buffer = this._buffers[bufferView.buffer];
+        bufferData = buffer?.resolvedBuffer;
+      }
+
       if (!bufferData)
         return undefined;
 
@@ -808,6 +1012,7 @@ export abstract class GltfReader {
       sceneNodes = Object.keys(this._nodes);
 
     this._sceneNodes = sceneNodes;
+    this._idMap = args.idMap;
   }
 
   protected readBufferData(json: { [k: string]: any }, accessorName: string, type: GltfDataType): GltfBufferData | undefined {
@@ -895,10 +1100,11 @@ export abstract class GltfReader {
       textureMapping = undefined;
 
     }
-    return new DisplayParams(DisplayParams.Type.Mesh, color, color, 1, LinePixels.Solid, FillFlags.Always, renderMaterial, undefined, hasBakedLighting, textureMapping);
+
+    return new DisplayParams(DisplayParams.Type.Mesh, color, color, 1, LinePixels.Solid, FillFlags.None, renderMaterial, undefined, hasBakedLighting, textureMapping);
   }
 
-  private readMeshPrimitives(node: GltfNode, featureTable?: FeatureTable, thisTransform?: Transform, thisBias?: Vector3d): GltfPrimitiveData[] {
+  private readMeshPrimitives(node: GltfNode, featureTable?: FeatureTable, thisTransform?: Transform, thisBias?: Vector3d, instances?: InstancedGraphicParams): GltfPrimitiveData[] {
     const meshes: GltfPrimitiveData[] = [];
     for (const meshKey of getGltfNodeMeshIds(node)) {
       const nodeMesh = this._meshes[meshKey];
@@ -908,9 +1114,34 @@ export abstract class GltfReader {
           if (mesh) {
             meshes.push(mesh);
             if (this._computedContentRange && mesh.pointRange) {
-              const invTransform = thisTransform?.inverse();
-              const meshRange = invTransform ? invTransform.multiplyRange(mesh.pointRange) : mesh.pointRange;
-              this._computedContentRange.extendRange(meshRange);
+              const meshRange = thisTransform ? thisTransform .multiplyRange(mesh.pointRange) : mesh.pointRange;
+              if (!instances) {
+                this._computedContentRange.extendRange(meshRange);
+              } else {
+                const tfs = instances.transforms;
+                const nodeRange = new Range3d();
+                const extendTransformedRange = (i: number, x: number, y: number, z: number) => {
+                  nodeRange.extendXYZ(tfs[i + 3] + tfs[i + 0] * x + tfs[i + 1] * y + tfs[i + 2] * z,
+                    tfs[i + 7] + tfs[i + 4] * x + tfs[i + 5] * y + tfs[i + 6] * z,
+                    tfs[i + 11] + tfs[i + 8] * x + tfs[i + 9] * y + tfs[i + 10] * z);
+                };
+
+                for (let i = 0; i < tfs.length; i += 3 * 4) {
+                  extendTransformedRange(i, meshRange.low.x, meshRange.low.y, meshRange.low.z);
+                  extendTransformedRange(i, meshRange.low.x, meshRange.low.y, meshRange.high.z);
+                  extendTransformedRange(i, meshRange.low.x, meshRange.high.y, meshRange.low.z);
+                  extendTransformedRange(i, meshRange.low.x, meshRange.high.y, meshRange.high.z);
+                  extendTransformedRange(i, meshRange.high.x, meshRange.low.y, meshRange.low.z);
+                  extendTransformedRange(i, meshRange.high.x, meshRange.low.y, meshRange.high.z);
+                  extendTransformedRange(i, meshRange.high.x, meshRange.high.y, meshRange.low.z);
+                  extendTransformedRange(i, meshRange.high.x, meshRange.high.y, meshRange.high.z);
+                }
+
+                nodeRange.low.addInPlace(instances.transformCenter);
+                nodeRange.high.addInPlace(instances.transformCenter);
+
+                this._computedContentRange.extendRange(nodeRange);
+              }
             }
           }
         }
@@ -923,7 +1154,7 @@ export abstract class GltfReader {
   protected readMeshPrimitive(primitive: GltfMeshPrimitive, featureTable?: FeatureTable, pseudoRtcBias?: Vector3d): GltfPrimitiveData | undefined {
     const meshMode = JsonUtils.asInt(primitive.mode, GltfMeshMode.Triangles);
     if (meshMode === GltfMeshMode.Points /* && !this._vertexTableRequired */) {
-      const pointCloud = this.readPointCloud(primitive, undefined !== featureTable);
+      const pointCloud = this.readPointCloud2(primitive, undefined !== featureTable);
       if (pointCloud)
         return pointCloud;
     }
@@ -1066,14 +1297,59 @@ export abstract class GltfReader {
     return mesh;
   }
 
-  private readPointCloud(primitive: GltfMeshPrimitive, hasFeatures: boolean): GltfPointCloud | undefined {
-    const posView = this.getBufferView(primitive.attributes, "POSITION");
-    if (!posView || GltfDataType.Float !== posView.type)
-      return undefined;
+  private readPointCloud2(primitive: GltfMeshPrimitive, hasFeatures: boolean): GltfPointCloud | undefined {
+    let pointRange: Range3d | undefined;
+    let positions: Uint8Array | Uint16Array | Float32Array;
+    let qparams: QParams3d | undefined;
 
-    const posData = posView.toBufferData(GltfDataType.Float);
-    if (!(posData?.buffer instanceof Float32Array))
-      return undefined;
+    const posView = this.getBufferView(primitive.attributes, "POSITION");
+    switch (posView?.type) {
+      case GltfDataType.Float: {
+        const posData = posView.toBufferData(GltfDataType.Float);
+        if (!(posData?.buffer instanceof Float32Array)) {
+          return undefined;
+        }
+
+        positions = posData.buffer;
+        const strideSkip = posView.stride - 3;
+        pointRange = new Range3d();
+        for (let i = 0; i < positions.length; i += strideSkip) {
+          pointRange.extendXYZ(positions[i++], positions[i++], positions[i++]);
+        }
+
+        qparams = QParams3d.fromOriginAndScale(new Point3d(0, 0, 0), new Point3d(1, 1, 1));
+        break;
+      }
+      case GltfDataType.UnsignedByte:
+      case GltfDataType.UnsignedShort: {
+        const posData = posView.toBufferData(posView.type);
+        if (!(posData?.buffer instanceof Uint8Array || posData?.buffer instanceof Uint16Array)) {
+          return undefined;
+        }
+
+        positions = posData.buffer;
+        let min, max;
+        const ext = posView.accessor.extensions?.WEB3D_quantized_attributes;
+        if (ext) {
+          min = ext.decodedMin;
+          max = ext.decodedMax;
+        } else {
+          // Assume KHR_mesh_quantization...
+          min = posView.accessor.min;
+          max = posView.accessor.max;
+        }
+
+        if (undefined === min || undefined === max) {
+          return undefined;
+        }
+
+        pointRange = Range3d.createXYZXYZ(min[0], min[1], min[2], max[0], max[1], max[2]);
+        qparams = QParams3d.fromRange(pointRange);
+        break;
+      }
+      default:
+        return undefined;
+    }
 
     const colorView = this.getBufferView(primitive.attributes, "COLOR_0");
     if (!colorView || GltfDataType.UnsignedByte !== colorView.type)
@@ -1082,11 +1358,6 @@ export abstract class GltfReader {
     const colorData = colorView.toBufferData(GltfDataType.UnsignedByte);
     if (!(colorData?.buffer instanceof Uint8Array))
       return undefined;
-
-    const strideSkip = posView.stride - 3;
-    const pointRange = new Range3d();
-    for (let i = 0; i < posData.buffer.length; i+= strideSkip)
-      pointRange.extendXYZ(posData.buffer[i++], posData.buffer[i++], posData.buffer[i++]);
 
     let colors = colorData.buffer;
     if ("VEC4" === colorView.accessor.type) {
@@ -1101,14 +1372,15 @@ export abstract class GltfReader {
     }
 
     const features = new FeatureIndex();
-    if (hasFeatures)
+    if (hasFeatures) {
       features.type = FeatureIndexType.Uniform;
+    }
 
     this._containsPointCloud = true;
     return {
       type: "pointcloud",
-      positions: posData.buffer,
-      qparams: QParams3d.fromOriginAndScale(new Point3d(0, 0, 0), new Point3d(1, 1, 1)),
+      positions,
+      qparams,
       pointRange,
       colors,
       colorFormat: "rgb",
@@ -1262,10 +1534,18 @@ export abstract class GltfReader {
       if (GltfDataType.UnsignedShort !== view.type)
         return false;
 
+      let rangeMin, rangeMax;
       const quantized = view.accessor.extensions?.WEB3D_quantized_attributes;
-      const rangeMin = quantized?.decodedMin;
-      const rangeMax = quantized?.decodedMax;
-      if (!rangeMin || !rangeMax) // required by spec...
+      if (quantized) {
+        rangeMin = quantized.decodedMin;
+        rangeMax = quantized.decodedMax;
+      } else {
+        // Assume KHR_mesh_quantization...
+        rangeMin = view.accessor.min;
+        rangeMax = view.accessor.max;
+      }
+
+      if (undefined === rangeMin || undefined === rangeMax) // required by spec...
         return false;
 
       // ###TODO apply WEB3D_quantized_attributes.decodeMatrix? Have not encountered in the wild; glTF 1.0 only.
@@ -1498,6 +1778,29 @@ export abstract class GltfReader {
   protected async resolveResources(): Promise<void> {
     // Load any external images and buffers.
     await this._resolveResources();
+
+    // Decompress any meshopt-compressed buffer views
+    const decodeMeshoptBuffers: Array<Promise<void>> = [];
+    for (const bv of gltfDictionaryIterator(this._bufferViews)) {
+      const ext = bv.extensions?.EXT_meshopt_compression;
+      if (ext) {
+        const bufferData = this._buffers[ext.buffer]?.resolvedBuffer;
+        if (bufferData) {
+          const source = new Uint8Array(bufferData.buffer, bufferData.byteOffset + (ext.byteOffset ?? 0), ext.byteLength ?? 0);
+          const decode = async () => {
+            bv.resolvedBuffer = await decodeMeshoptBuffer(source, ext);
+            if (bv.resolvedBuffer) {
+              bv.byteLength = bv.resolvedBuffer.byteLength;
+              bv.byteOffset = 0;
+            }
+          };
+
+          decodeMeshoptBuffers.push(decode());
+        }
+      }
+    }
+
+    await Promise.all(decodeMeshoptBuffers);
 
     // If any meshes are draco-compressed, dynamically load the decoder module and then decode the meshes.
     const dracoMeshes: DracoMeshCompression[] = [];
@@ -1743,6 +2046,8 @@ export interface ReadGltfGraphicsArgs {
   transform?: Transform;
   /** @alpha */
   hasChildren?: boolean;
+  /** @internal */
+  idMap?: BatchedTileIdMap;
 }
 
 /** The output of [[readGltf]].
@@ -1817,6 +2122,7 @@ export class GltfGraphicsReader extends GltfReader {
       props,
       iModel: args.iModel,
       vertexTableRequired: true,
+      idMap: args.idMap,
     });
 
     this._contentRange = args.contentRange;
@@ -1831,11 +2137,204 @@ export class GltfGraphicsReader extends GltfReader {
     }
   }
 
+  protected override get viewFlagOverrides(): ViewFlagOverrides {
+    return {
+      whiteOnWhiteReversal: false,
+      renderMode: RenderMode.SmoothShade,
+    };
+  }
+
+  private getGltfStructuralMetadataBuffer(id: GltfId, type: GltfStructuralMetadata.ClassPropertyComponentType){
+    const bufferView = this._bufferViews[id];
+    if (!bufferView || undefined === bufferView.buffer)
+      return undefined;
+
+    if(!bufferView.byteLength || bufferView.byteLength === 0){
+      return undefined;
+    }
+
+    const bufferData = this._buffers[bufferView.buffer]?.resolvedBuffer;
+    if (!bufferData)
+      return undefined;
+
+    assert(undefined !== bufferView.byteLength); // required by spec; TypeScript interface is wrong.
+    const byteOffset = bufferView.byteOffset ?? 0;
+
+    const subarray = bufferData.slice(byteOffset, byteOffset + bufferView.byteLength);
+    switch(type){
+      case "INT8":
+        return new Int8Array(subarray.buffer, 0, bufferView.byteLength);
+      case "UINT8":
+        return new Uint8Array(subarray.buffer, 0, bufferView.byteLength);
+      case "INT16":
+        return new Int16Array(subarray.buffer, 0, bufferView.byteLength / 2);
+      case "UINT16":
+        return new Uint16Array(subarray.buffer, 0, bufferView.byteLength / 2);
+      case "INT32":
+        return new Int32Array(subarray.buffer, 0, bufferView.byteLength / 4);
+      case "UINT32":
+        return new Uint32Array(subarray.buffer, 0, bufferView.byteLength / 4);
+      case "INT64":
+        return new BigInt64Array(subarray.buffer, 0, bufferView.byteLength / 8);
+      case "UINT64":
+        return new BigUint64Array(subarray.buffer, 0, bufferView.byteLength / 8);
+      case "FLOAT32":
+        return new Float32Array(subarray.buffer, 0, bufferView.byteLength / 4);
+      case "FLOAT64":
+        return new Float64Array(subarray.buffer, 0, bufferView.byteLength / 8);
+    }
+    return undefined;
+  }
+
+  private getGltfStructuralMetadataPropertyValues(property: GltfStructuralMetadata.PropertyTableProperty, classProperty: GltfStructuralMetadata.ClassProperty, count: number){
+
+    // Not supported for now
+    if(classProperty.type === "ENUM" || classProperty.type === "BOOLEAN"){
+      return undefined;
+    }
+
+    let getPropertyValue: any;
+
+    if(classProperty.type === "STRING" && property.stringOffsets){
+
+      const stringValues = this.getGltfStructuralMetadataBuffer(property.values, "UINT8") as Uint8Array;
+      if(!stringValues){
+        return undefined;
+      }
+
+      const stringOffsets = this.getGltfStructuralMetadataBuffer(property.stringOffsets, "UINT32") as Uint32Array;
+      if(!stringOffsets){
+        return undefined;
+      }
+
+      getPropertyValue = (index: number) => {
+        const begin = stringOffsets[index];
+        const end = stringOffsets[index+1];
+        return utf8ToString(stringValues.subarray(begin, end));
+      };
+    } else {
+
+      if(!classProperty.componentType){
+        return undefined;
+      }
+
+      let numComponents = -1;
+      switch(classProperty.type){
+        case "SCALAR":
+          numComponents = 1;
+          break;
+        case "VEC2":
+          numComponents = 2;
+          break;
+        case "VEC3":
+          numComponents = 3;
+          break;
+        case "VEC4":
+          numComponents = 4;
+          break;
+        case "MAT2":
+          numComponents = 4;
+          break;
+        case "MAT3":
+          numComponents = 9;
+          break;
+        case "MAT4":
+          numComponents = 16;
+          break;
+      }
+
+      if(numComponents === -1){
+        return undefined;
+      }
+
+      const values = this.getGltfStructuralMetadataBuffer(property.values, classProperty.componentType);
+      if(!values){
+        return undefined;
+      }
+
+      if(numComponents === 1){
+        getPropertyValue = (index: number) => {
+          return values[index];
+        };
+      } else {
+        getPropertyValue = (index: number) => {
+          const result = [];
+          for(let i = 0; i < numComponents; i++){
+            result.push(values[index * numComponents + i]);
+          }
+          return result;
+        };
+      }
+    }
+
+    const propertyValues: any[] = [];
+    for(let i = 0; i < count; i++){
+      const value = getPropertyValue(i);
+      const propertyValue = (typeof value === "bigint" ) ? value.toString() : value;
+      if(!classProperty.noData || propertyValue !== classProperty.noData){
+        propertyValues.push(propertyValue);
+      } else{
+        propertyValues.push(undefined);
+      }
+    }
+
+    return propertyValues;
+  }
+
+  private readGltfStructuralMetadata(){
+    const propertyTables = this._glTF.extensions?.EXT_structural_metadata?.propertyTables;
+    const schema = this._glTF.extensions?.EXT_structural_metadata?.schema;
+
+    if(propertyTables && schema && schema.classes){
+
+      this._structuralMetadata = { tables: [] };
+
+      for(const propertyTable of propertyTables){
+        if(!propertyTable.properties || !schema.classes){
+          continue;
+        }
+
+        const propertyTableSchema = schema.classes[propertyTable.class];
+        if(!propertyTableSchema || !propertyTableSchema.properties){
+          continue;
+        }
+
+        const structuralMetadataTable: StructuralMetadataTable = {
+          name: propertyTableSchema.name ?? propertyTable.class,
+          entries: [],
+        };
+
+        for (const [propertyName, property] of Object.entries(propertyTable.properties)){
+
+          const propertySchema = propertyTableSchema.properties[propertyName];
+
+          if(!property || !propertySchema){
+            continue;
+          }
+
+          const propertyValues = this.getGltfStructuralMetadataPropertyValues(property, propertySchema, propertyTable.count);
+
+          if(!propertyValues){
+            continue;
+          }
+
+          structuralMetadataTable.entries.push({
+            name: propertySchema.name ?? propertyName,
+            values: propertyValues,
+          });
+        }
+        this._structuralMetadata.tables.push(structuralMetadataTable);
+      }
+    }
+  }
+
   public async read(): Promise<GltfReaderResult> {
     await this.resolveResources();
+    this.readGltfStructuralMetadata();
     return this.readGltfAndCreateGraphics(this._isLeaf, this._featureTable, this._contentRange, this._transform);
   }
 
+  public get structuralMetadata(): StructuralMetadata | undefined { return this._structuralMetadata; }
   public get nodes(): GltfDictionary<GltfNode> { return this._nodes; }
   public get scenes(): GltfDictionary<GltfScene> { return this._glTF.scenes ?? emptyDict; }
   public get sceneNodes(): GltfId[] { return this._sceneNodes; }

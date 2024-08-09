@@ -6,9 +6,11 @@
  * @module Logging
  */
 
+import { BeEvent } from "./BeEvent";
 import { BentleyError, IModelStatus, LoggingMetaData } from "./BentleyError";
 import { BentleyLoggerCategory } from "./BentleyLoggerCategory";
 import { IDisposable } from "./Disposable";
+import { staticLoggerMetadata } from "./internal/staticLoggerMetadata";
 
 /** Defines the *signature* for a log function.
  * @public
@@ -56,19 +58,43 @@ export class Logger {
   protected static _logWarning: LogFunction | undefined;
   protected static _logInfo: LogFunction | undefined;
   protected static _logTrace: LogFunction | undefined;
-  /** @internal */
-  public static logLevelChangedFn?: VoidFunction;
-  private static _categoryFilter = new Map<string, LogLevel>(); // do not change the name of this member, it is referenced directly from node addon
-  private static _minLevel: LogLevel | undefined = undefined; // do not change the name of this member, it is referenced directly from node addon
+
+  private static _onLogLevelChanged: BeEvent<() => void> | undefined;
+
+  /** An event raised whenever [[setLevel]] or [[setLevelDefault]] is called. */
+  public static get onLogLevelChanged(): BeEvent<() => void> {
+    // We have to lazily initialize because it's static and BeEvent imports UnexpectedErrors which imports Logger which wants to instantiate BeEvent.
+    if (undefined === Logger._onLogLevelChanged) {
+      Logger._onLogLevelChanged = new BeEvent<() => void>();
+    }
+
+    return Logger._onLogLevelChanged;
+  }
+
+  private static _categoryFilter: {[categoryName: string]: LogLevel | undefined} = {};
+
+  /** Maps category names to the least severe level at which messages in that category should be displayed,
+   * or `undefined` if a minimum has not been defined.
+   * @see [[setLevel]] to change the minimum logging level for a category.
+   */
+  public static get categoryFilter(): Readonly<{[categoryName: string]: LogLevel | undefined}> {
+    // NOTE: this property is accessed by native code.
+    return this._categoryFilter;
+  }
+
+  private static _minLevel: LogLevel | undefined;
+
+  /** The least severe level at which messages should be displayed by default.
+   * @see [[setLevelDefault]] to change this default.
+   * @see [[setLevel]] to override this default for specific categories.
+   */
+  public static get minLevel(): LogLevel | undefined {
+    // NOTE: this property is accessed by native code. */
+    return this._minLevel;
+  }
 
   /** Should the call stack be included when an exception is logged?  */
   public static logExceptionCallstacks = false;
-
-  /** All static metadata is combined with per-call metadata and stringified in every log message.
-   * Static metadata can either be an object or a function that returns an object.
-   * Use a key to identify entries in the map so the can be removed individually.
-   * @internal */
-  public static staticMetaData = new Map<string, LoggingMetaData>();
 
   /** Initialize the logger streams. Should be called at application initialization time. */
   public static initialize(logError?: LogFunction, logWarning?: LogFunction, logInfo?: LogFunction, logTrace?: LogFunction): void {
@@ -91,7 +117,7 @@ export class Logger {
   /** merge the supplied metadata with all static metadata into one object */
   public static getMetaData(metaData?: LoggingMetaData): object {
     const metaObj = {};
-    for (const meta of Logger.staticMetaData) {
+    for (const meta of staticLoggerMetadata) {
       const val = BentleyError.getMetaData(meta[1]);
       if (val)
         Object.assign(metaObj, val);
@@ -109,15 +135,15 @@ export class Logger {
   /** Set the least severe level at which messages should be displayed by default. Call setLevel to override this default setting for specific categories. */
   public static setLevelDefault(minLevel: LogLevel): void {
     this._minLevel = minLevel;
-    this.logLevelChangedFn?.();
+    this.onLogLevelChanged.raiseEvent();
   }
 
   /** Set the minimum logging level for the specified category. The minimum level is least severe level at which messages in the
    * specified category should be displayed.
    */
   public static setLevel(category: string, minLevel: LogLevel) {
-    Logger._categoryFilter.set(category, minLevel);
-    this.logLevelChangedFn?.();
+    Logger._categoryFilter[category] = minLevel;
+    this.onLogLevelChanged.raiseEvent();
   }
 
   /** Interpret a string as the name of a LogLevel */
@@ -177,7 +203,7 @@ export class Logger {
   /** Get the minimum logging level for the specified category. */
   public static getLevel(category: string): LogLevel | undefined {
     // Prefer the level set for this category specifically
-    const minLevelForThisCategory = Logger._categoryFilter.get(category);
+    const minLevelForThisCategory = Logger.categoryFilter[category];
     if (minLevelForThisCategory !== undefined)
       return minLevelForThisCategory;
 
@@ -187,7 +213,7 @@ export class Logger {
       return Logger.getLevel(category.slice(0, parent));
 
     // Fall back on the default level.
-    return Logger._minLevel;
+    return Logger.minLevel;
   }
 
   /** Turns off the least severe level at which messages should be displayed by default.
@@ -200,7 +226,7 @@ export class Logger {
   /** Turns off all category level filters previously defined with [[Logger.setLevel]].
    */
   public static turnOffCategories(): void {
-    Logger._categoryFilter.clear();
+    Logger._categoryFilter = {};
   }
 
   /** Check if messages in the specified category should be displayed at this level of severity. */
@@ -224,15 +250,12 @@ export class Logger {
     return BentleyError.getErrorMessage(err) + stack;
   }
 
-  /** Log the specified exception. The special "ExceptionType" property will be added as metadata,
-   * in addition to any other metadata that may be supplied by the caller, unless the
-   * metadata supplied by the caller already includes this property.
+  /** Log the specified exception. The special "ExceptionType" property will be added as metadata.
    * @param category  The category of the message.
    * @param err  The exception object.
    * @param log The logger output function to use - defaults to Logger.logError
-   * @param metaData  Optional data for the message
    */
-  public static logException(category: string, err: any, log: LogFunction = (_category, message) => Logger.logError(_category, message)): void {
+  public static logException(category: string, err: any, log: LogFunction = (_category, message, metaData) => Logger.logError(_category, message, metaData)): void {
     log(category, Logger.getExceptionMessage(err), () => {
       return { ...BentleyError.getErrorMetadata(err), exceptionType: err.constructor.name };
     });

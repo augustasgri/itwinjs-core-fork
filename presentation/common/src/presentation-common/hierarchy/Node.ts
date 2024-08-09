@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the project root for license terms and full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the project root for license terms and full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 /** @packageDocumentation
  * @module Hierarchies
  */
@@ -66,7 +66,6 @@ export interface Node {
   /**
    * Identifies whether the hierarchy level below this node supports filtering. If not, requesting either a hierarchy level descriptor or
    * a hierarchy level with [[HierarchyRequestOptions.instanceFilter]] will throw an error with [[PresentationStatus.InvalidArgument]] status.
-   * @beta
    */
   supportsFiltering?: boolean;
   /** Extended data injected into this node */
@@ -105,7 +104,6 @@ export interface NodeJSON {
   isChecked?: boolean;
   /** @deprecated in 3.x. Use [[extendedData]] instead. See [extended data usage page]($docs/presentation/customization/ExtendedDataUsage.md) for more details. */
   isCheckboxEnabled?: boolean;
-  /** @beta */
   supportsFiltering?: boolean;
   extendedData?: {
     [key: string]: any;
@@ -163,8 +161,9 @@ export namespace Node {
    */
   // eslint-disable-next-line deprecation/deprecation
   export function fromJSON(json: NodeJSON | string): Node {
-    if (typeof json === "string")
+    if (typeof json === "string") {
       return JSON.parse(json, reviver);
+    }
     const { labelDefinition, ...baseJson } = json;
     return {
       ...baseJson,
@@ -208,8 +207,9 @@ export namespace Node {
    */
   // eslint-disable-next-line deprecation/deprecation
   export function listFromJSON(json: NodeJSON[] | string): Node[] {
-    if (typeof json === "string")
+    if (typeof json === "string") {
       return JSON.parse(json, listReviver);
+    }
     // eslint-disable-next-line deprecation/deprecation
     return json.map((m) => fromJSON(m));
   }

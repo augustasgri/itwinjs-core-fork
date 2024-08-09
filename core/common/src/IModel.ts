@@ -136,6 +136,19 @@ export interface IModelEncryptionProps {
 }
 
 /**
+ * Sqlite options.
+ * @public
+ */
+export interface OpenSqliteArgs {
+  /**
+   * Specify timeout after which SQLite stop retrying to acquire lock to database file and throw SQLITE_BUSY error.
+   * Timeout is specified in milliseconds.
+   * For more information https://www.sqlite.org/c3ref/busy_timeout.html.
+   * */
+  readonly busyTimeout?: number;
+}
+
+/**
  * A key used to identify an opened [IModelDb]($backend) between the frontend and backend for Rpc and Ipc communications.
  * Keys must be unique - that is there can never be two IModelDbs opened with the same key at any given time.
  * If no key is supplied in a call to open an IModelDb, one is generated and returned.
@@ -298,9 +311,9 @@ export class EcefLocation implements EcefLocationProps {
   /** Construct ECEF Location from transform with optional position on the earth used to establish the ECEF origin and orientation. */
   public static createFromTransform(transform: Transform): EcefLocation {
     const ecefOrigin = transform.getOrigin();
-    const angleFromInput = YawPitchRollAngles.createDegrees(0,0,0);
+    const angleFromInput = YawPitchRollAngles.createDegrees(0, 0, 0);
     const locationOrientationFromInputT = YawPitchRollAngles.createFromMatrix3d(transform.getMatrix(), angleFromInput);
-    const transformProps =  transform.toJSON();
+    const transformProps = transform.toJSON();
 
     return new EcefLocation({ origin: ecefOrigin, orientation: locationOrientationFromInputT ?? angleFromInput, transform: transformProps });
   }
@@ -368,6 +381,7 @@ export abstract class IModel implements IModelProps {
   private _ecefLocation?: EcefLocation;
   private _geographicCoordinateSystem?: GeographicCRS;
   private _iModelId?: GuidString;
+  private _changeset: ChangesetIdWithIndex;
 
   /** The Id of the repository model. */
   public static readonly repositoryModelId: Id64String = "0x1";
@@ -388,6 +402,8 @@ export abstract class IModel implements IModelProps {
   public readonly onEcefLocationChanged = new BeEvent<(previousLocation: EcefLocation | undefined) => void>();
   /** Event raised after [[geographicCoordinateSystem]] changes. */
   public readonly onGeographicCoordinateSystemChanged = new BeEvent<(previousGCS: GeographicCRS | undefined) => void>();
+  /** Event raised after [[changeset]] changes. */
+  public readonly onChangesetChanged = new BeEvent<(previousChangeset: ChangesetIdWithIndex) => void>();
 
   /** Name of the iModel */
   public get name(): string {
@@ -544,7 +560,16 @@ export abstract class IModel implements IModelProps {
   public get iModelId(): GuidString | undefined { return this._iModelId; }
 
   /** @public */
-  public changeset: ChangesetIdWithIndex;
+  public get changeset(): ChangesetIdWithIndex {
+    return { ...this._changeset };
+  }
+  public set changeset(changeset: ChangesetIdWithIndex) {
+    const prev = this._changeset;
+    if (prev.id !== changeset.id || prev.index !== changeset.index) {
+      this._changeset = { id: changeset.id, index: changeset.index };
+      this.onChangesetChanged.raiseEvent(prev);
+    }
+  }
 
   protected _openMode = OpenMode.Readonly;
   /** The [[OpenMode]] used for this IModel. */
@@ -575,14 +600,12 @@ export abstract class IModel implements IModelProps {
 
   /** @internal */
   protected constructor(tokenProps?: IModelRpcProps) {
-    this.changeset = { id: "", index: 0 };
+    this._changeset = tokenProps?.changeset ?? { id: "", index: 0 };
     this._fileKey = "";
     if (tokenProps) {
       this._fileKey = tokenProps.key;
       this._iTwinId = tokenProps.iTwinId;
       this._iModelId = tokenProps.iModelId;
-      if (tokenProps.changeset)
-        this.changeset = tokenProps.changeset;
     }
   }
 
@@ -622,7 +645,7 @@ export abstract class IModel implements IModelProps {
    * @returns A Point3d in ECEF coordinates
    * @throws IModelError if [[isGeoLocated]] is false.
    */
-  public spatialToEcef(spatial: XYAndZ, result?: Point3d): Point3d { return this.getEcefTransform().multiplyPoint3d(spatial, result)!; }
+  public spatialToEcef(spatial: XYAndZ, result?: Point3d): Point3d { return this.getEcefTransform().multiplyPoint3d(spatial, result); }
 
   /** Convert a point in ECEF coordinates to a point in this iModel's Spatial coordinates using its [[ecefLocation]].
    * @param ecef A point in ECEF coordinates

@@ -1,6 +1,6 @@
 {
   "name": "@itwin/core-bentley",
-  "version": "4.4.0-dev.22",
+  "version": "4.9.0-dev.3",
   "description": "Bentley JavaScript core components",
   "main": "lib/cjs/core-bentley.js",
   "module": "lib/esm/core-bentley.js",
@@ -20,7 +20,8 @@
     "test": "mocha",
     "docs": "betools docs --json=../../generated-docs/core/core-bentley/file.json --tsIndexFile=core-bentley.ts --onlyJson",
     "cover": "nyc npm -s test",
-    "lint": "eslint -f visualstudio \"./src/**/*.ts\" 1>&2"
+    "lint": "eslint -f visualstudio \"./src/**/*.ts\" 1>&2",
+    "lint-fix": "eslint --fix -f visualstudio \"./src/**/*.ts\" 1>&2"
   },
   "keywords": [
     "Bentley",
@@ -34,7 +35,7 @@
   },
   "devDependencies": {
     "@itwin/build-tools": "workspace:*",
-    "@itwin/eslint-plugin": "4.0.0-dev.44",
+    "@itwin/eslint-plugin": "^4.0.2",
     "@opentelemetry/api": "1.0.4",
     "@types/chai": "4.3.1",
     "@types/chai-as-promised": "^7",
@@ -42,11 +43,11 @@
     "@types/node": "~18.16.20",
     "chai": "^4.3.10",
     "chai-as-promised": "^7.1.1",
-    "eslint": "^8.44.0",
+    "eslint": "^8.56.0",
     "mocha": "^10.2.0",
     "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
-    "typescript": "~5.0.2"
+    "typescript": "~5.3.3"
   },
   "nyc": {
     "extends": "./node_modules/@itwin/build-tools/.nycrc"

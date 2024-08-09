@@ -2,54 +2,80 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-/** @packageDocumentation
- * @module Merging
- */
+import { CustomAttribute, CustomAttributeClass, RelationshipClass, SchemaItemKey } from "@itwin/ecschema-metadata";
+import { type SchemaMergeContext } from "./SchemaMerger";
+import { type CustomAttributeDifference } from "../Differencing/SchemaDifference";
+import { updateSchemaItemFullName, updateSchemaItemKey } from "./SchemaItemMerger";
 
-import { CustomAttribute, CustomAttributeClass, SchemaItem, SchemaItemKey, SchemaKey } from "@itwin/ecschema-metadata";
-import { ChangeType, CustomAttributeContainerChanges } from "../Validation/SchemaChanges";
-import { SchemaMergeContext } from "./SchemaMerger";
-
-interface EditResults {
-  errorMessage?: string;
-}
+type CustomAttributeSetter = (customAttribute: CustomAttribute) => Promise<void>;
 
 /**
  * Merges the custom attributes of the given changes iterable. The third parameter is a callback to pass
  * a scope (Class, Property, Schema) specific handler.
- * @param mergeContext  The current schema merging context.
- * @param changes       An iterable with custom attribute changes.
- * @param callback      The callback to add the custom attribute with a scope specific editor.
- * @returns             A EditResults object.
+ * @param context   The current schema merging context.
+ * @param change    The individual custom attribute change.
+ * @returns         A EditResults object.
  * @internal
  */
-export async function mergeCustomAttributes(mergeContext: SchemaMergeContext, changes: Iterable<CustomAttributeContainerChanges>, callback: (customAttribute: CustomAttribute) => Promise<EditResults>): Promise<EditResults> {
-  for (const customAttributeContainerChange of changes) {
-    for (const change of customAttributeContainerChange.customAttributeChanges) {
-      if (change.changeType === ChangeType.Missing) {
-        const [sourceCustomAttribute] = change.diagnostic.messageArgs as [CustomAttribute];
-        const [schemaName, itemName]  = SchemaItem.parseFullName(sourceCustomAttribute.className);
-        const schemaItemKey = new SchemaItemKey(itemName, mergeContext.sourceSchema.schemaKey.compareByName(schemaName)
-          ? mergeContext.targetSchema.schemaKey
-          : new SchemaKey(schemaName),
-        );
-        const targetCustomAttribute = await mergeContext.targetSchema.lookupItem<CustomAttributeClass>(schemaItemKey);
-        if (targetCustomAttribute === undefined) {
-          return { errorMessage: `Unable to locate the custom attribute class ${schemaItemKey.name} in the merged schema.`};
-        }
-
-        const results = await callback({
-          ...sourceCustomAttribute,
-          className: targetCustomAttribute.fullName,
-        });
-
-        if (results.errorMessage !== undefined) {
-          return {  errorMessage: results.errorMessage };
-        }
-      } else {
-        return { errorMessage: `Changes of Custom Attribute ${customAttributeContainerChange.ecTypeName} on ${mergeContext.targetSchema.name} merge is not implemented.`};
-      }
+export async function mergeCustomAttribute(context: SchemaMergeContext, change: CustomAttributeDifference): Promise<void> {
+  if (change.changeType === "add") {
+    if (change.difference.className === undefined) {
+      throw new Error("CustomAttribute instance must specify className");
     }
+    const schemaItemKey = await updateSchemaItemKey(context, change.difference.className);
+
+    const targetCustomAttributeClass = await context.targetSchema.lookupItem<CustomAttributeClass>(schemaItemKey);
+    if (targetCustomAttributeClass === undefined) {
+      throw new Error(`Unable to locate the custom attribute class ${schemaItemKey.name} in the merged schema.`);
+    }
+
+    const caInstance: CustomAttribute = {
+      ...change.difference,
+      className: schemaItemKey.fullName,
+    };
+
+    if (change.appliedTo === "Schema") {
+      await context.editor.addCustomAttribute(context.targetSchemaKey, caInstance);
+    }
+    if (change.appliedTo === "SchemaItem") {
+      const itemKey = new SchemaItemKey(change.itemName, context.targetSchemaKey);
+      await context.editor.entities.addCustomAttribute(itemKey, caInstance);
+    }
+    if (change.appliedTo === "Property") {
+      const itemKey = new SchemaItemKey(change.itemName, context.targetSchemaKey);
+      const [propertyName] = change.path.split(".");
+      await context.editor.entities.properties.addCustomAttribute(itemKey, propertyName, caInstance);
+    }
+    if (change.appliedTo === "RelationshipConstraint") {
+      const itemKey = new SchemaItemKey(change.itemName, context.targetSchemaKey);
+      const relationshipClass = await context.targetSchema.lookupItem<RelationshipClass>(itemKey);
+      if (relationshipClass === undefined) {
+        throw new Error(`Unable to locate the relationship class ${itemKey.name} in the merged schema.`);
+      }
+      const constraint = change.path === "$source"
+        ? relationshipClass.source
+        : relationshipClass.target;
+
+      return context.editor.relationships.addCustomAttributeToConstraint(constraint, caInstance);
+    }
+  } else {
+    throw new Error(`Changes of Custom Attribute on merge is not implemented.`);
   }
-  return {};
+}
+
+/**
+ * @internal
+ */
+export async function applyCustomAttributes(context: SchemaMergeContext, customAttributes: CustomAttribute[], handler: CustomAttributeSetter): Promise<void> {
+  for (const customAttribute of customAttributes) {
+    await applyCustomAttribute(context, customAttribute, handler);
+  }
+}
+
+/**
+ * @internal
+ */
+export async function applyCustomAttribute(context: SchemaMergeContext, customAttribute: CustomAttribute, handler: CustomAttributeSetter): Promise<void> {
+  customAttribute.className = await updateSchemaItemFullName(context, customAttribute.className);
+  return handler(customAttribute);
 }

@@ -128,7 +128,7 @@ export class Constant extends SchemaItem {
     protected setNumerator(numerator: number): void;
     // @alpha
     protected setPhenomenon(phenomenon: LazyLoadedPhenomenon): void;
-    toJSON(standalone: boolean, includeSchemaVersion: boolean): ConstantProps;
+    toJSON(standalone?: boolean, includeSchemaVersion?: boolean): ConstantProps;
     // @internal (undocumented)
     toXml(schemaXml: Document): Promise<Element>;
 }
@@ -160,9 +160,11 @@ export interface CustomAttribute {
 export class CustomAttributeClass extends ECClass {
     constructor(schema: Schema, name: string, modifier?: ECClassModifier);
     // (undocumented)
-    get containerType(): CustomAttributeContainerType;
+    get appliesTo(): CustomAttributeContainerType;
     // (undocumented)
-    protected _containerType?: CustomAttributeContainerType;
+    protected _appliesTo?: CustomAttributeContainerType;
+    // @deprecated (undocumented)
+    get containerType(): CustomAttributeContainerType;
     // (undocumented)
     fromJSON(customAttributeProps: CustomAttributeClassProps): Promise<void>;
     // (undocumented)
@@ -170,7 +172,7 @@ export class CustomAttributeClass extends ECClass {
     // (undocumented)
     readonly schemaItemType: SchemaItemType.CustomAttributeClass;
     // @alpha
-    protected setContainerType(containerType: CustomAttributeContainerType): void;
+    protected setAppliesTo(containerType: CustomAttributeContainerType): void;
     toJSON(standalone?: boolean, includeSchemaVersion?: boolean): CustomAttributeClassProps;
     // @internal (undocumented)
     toXml(schemaXml: Document): Promise<Element>;
@@ -178,7 +180,6 @@ export class CustomAttributeClass extends ECClass {
 
 // @beta (undocumented)
 export interface CustomAttributeClassProps extends ClassProps {
-    // (undocumented)
     readonly appliesTo: string;
 }
 
@@ -334,8 +335,6 @@ export abstract class ECClass extends SchemaItem implements CustomAttributeConta
     protected _properties?: Map<string, Property>;
     // @alpha
     protected setModifier(modifier: ECClassModifier): void;
-    // @alpha
-    protected setName(name: string): void;
     toJSON(standalone?: boolean, includeSchemaVersion?: boolean): ClassProps;
     // @internal (undocumented)
     toXml(schemaXml: Document): Promise<Element>;
@@ -815,6 +814,8 @@ export class KindOfQuantity extends SchemaItem {
     protected _relativeError: number;
     // (undocumented)
     readonly schemaItemType: SchemaItemType.KindOfQuantity;
+    // @alpha
+    protected setRelativeError(relativeError: number): void;
     toJSON(standalone?: boolean, includeSchemaVersion?: boolean): KindOfQuantityProps;
     // @internal (undocumented)
     toXml(schemaXml: Document): Promise<Element>;
@@ -1304,57 +1305,57 @@ export interface PropertyProps {
 // @beta (undocumented)
 export enum PropertyType {
     // (undocumented)
-    Binary = 257,
+    Binary = 257,// PropertyFlags.Struct
     // (undocumented)
-    Binary_Array = 261,
+    Binary_Array = 261,// PropertyFlags.Struct | PropertyFlags.Array
     // (undocumented)
-    Boolean = 513,
+    Boolean = 513,// PropertyFlags.Navigation
     // (undocumented)
-    Boolean_Array = 517,
+    Boolean_Array = 517,// PrimitiveType.Binary
     // (undocumented)
-    DateTime = 769,
+    DateTime = 769,// PrimitiveType.Binary | PropertyFlags.Array
     // (undocumented)
-    DateTime_Array = 773,
+    DateTime_Array = 773,// PrimitiveType.Boolean
     // (undocumented)
-    Double = 1025,
+    Double = 1025,// PrimitiveType.Boolean | PropertyFlags.Array
     // (undocumented)
-    Double_Array = 1029,
+    Double_Array = 1029,// PrimitiveType.DateTime
     // (undocumented)
-    IGeometry = 2561,
+    IGeometry = 2561,// PrimitiveType.DateTime | PropertyFlags.Array
     // (undocumented)
-    IGeometry_Array = 2565,
+    IGeometry_Array = 2565,// PrimitiveType.Double
     // (undocumented)
-    Integer = 1281,
+    Integer = 1281,// PrimitiveType.Double | PropertyFlags.Array
     // (undocumented)
-    Integer_Array = 1285,
+    Integer_Array = 1285,// PrimitiveType.Integer
     // (undocumented)
-    Integer_Enumeration = 1297,
+    Integer_Enumeration = 1297,// PrimitiveType.Integer | PropertyFlags.Array
     // (undocumented)
-    Integer_Enumeration_Array = 1301,
+    Integer_Enumeration_Array = 1301,// PrimitiveType.Integer | PropertyFlags.Enumeration
     // (undocumented)
-    Long = 1537,
+    Long = 1537,// PrimitiveType.Integer | PropertyFlags.Enumeration | PropertyFlags.Array
     // (undocumented)
-    Long_Array = 1541,
+    Long_Array = 1541,// PrimitiveType.Long
     // (undocumented)
-    Navigation = 8,
+    Navigation = 8,// PrimitiveType.Long | PropertyFlags.Array
     // (undocumented)
-    Point2d = 1793,
+    Point2d = 1793,// PrimitiveType.Point2d
     // (undocumented)
-    Point2d_Array = 1797,
+    Point2d_Array = 1797,// PrimitiveType.Point2d | PropertyFlags.Array
     // (undocumented)
-    Point3d = 2049,
+    Point3d = 2049,// PrimitiveType.Point3d
     // (undocumented)
-    Point3d_Array = 2053,
+    Point3d_Array = 2053,// PrimitiveType.Point3d | PropertyFlags.Array
     // (undocumented)
-    String = 2305,
+    String = 2305,// PrimitiveType.String
     // (undocumented)
-    String_Array = 2309,
+    String_Array = 2309,// PrimitiveType.String | PropertyFlags.Array
     // (undocumented)
-    String_Enumeration = 2321,
+    String_Enumeration = 2321,// PrimitiveType.String | PropertyFlags.Enumeration
     // (undocumented)
-    String_Enumeration_Array = 2325,
+    String_Enumeration_Array = 2325,// PrimitiveType.String | PropertyFlags.Enumeration | PropertyFlags.Array
     // (undocumented)
-    Struct = 2,
+    Struct = 2,// PrimitiveType.IGeometry
     // (undocumented)
     Struct_Array = 6
 }
@@ -1398,9 +1399,13 @@ export class RelationshipClass extends ECClass {
     // (undocumented)
     readonly schemaItemType: SchemaItemType.RelationshipClass;
     // @alpha
+    protected setSourceConstraint(source: RelationshipConstraint): void;
+    // @alpha
     protected setStrength(strength: StrengthType): void;
     // @alpha
     protected setStrengthDirection(direction: StrengthDirection): void;
+    // @alpha
+    protected setTargetConstraint(target: RelationshipConstraint): void;
     // (undocumented)
     get source(): RelationshipConstraint;
     // (undocumented)
@@ -1461,11 +1466,13 @@ export class RelationshipConstraint implements CustomAttributeContainerProps {
     static isRelationshipConstraint(object: any): object is RelationshipConstraint;
     get isSource(): boolean;
     // (undocumented)
-    get multiplicity(): RelationshipMultiplicity | undefined;
+    get multiplicity(): RelationshipMultiplicity;
+    protected set multiplicity(multiplicity: RelationshipMultiplicity);
     // (undocumented)
     protected _multiplicity?: RelationshipMultiplicity;
     // (undocumented)
-    get polymorphic(): boolean | undefined;
+    get polymorphic(): boolean;
+    protected set polymorphic(polymorphic: boolean);
     // (undocumented)
     protected _polymorphic?: boolean;
     // (undocumented)
@@ -1474,10 +1481,13 @@ export class RelationshipConstraint implements CustomAttributeContainerProps {
     protected _relationshipClass: RelationshipClass;
     // (undocumented)
     get relationshipEnd(): RelationshipEnd;
+    protected set relationshipEnd(relationshipEnd: RelationshipEnd);
     // (undocumented)
     protected _relationshipEnd: RelationshipEnd;
+    protected removeClass(constraint: EntityClass | Mixin | RelationshipClass): void;
     // (undocumented)
     get roleLabel(): string | undefined;
+    protected set roleLabel(roleLabel: string | undefined);
     // (undocumented)
     protected _roleLabel?: string;
     get schema(): Schema;
@@ -1606,6 +1616,10 @@ export class Schema implements CustomAttributeContainerProps {
     protected deleteClass(name: string): Promise<void>;
     // @alpha
     protected deleteClassSync(name: string): void;
+    // @alpha
+    protected deleteSchemaItem(name: string): Promise<void>;
+    // @alpha
+    protected deleteSchemaItemSync(name: string): void;
     // (undocumented)
     get description(): string | undefined;
     // (undocumented)
@@ -1652,6 +1666,10 @@ export class Schema implements CustomAttributeContainerProps {
     protected _schemaKey?: SchemaKey;
     // @alpha
     protected setContext(context: SchemaContext): void;
+    // @alpha
+    protected setDescription(description: string): void;
+    // @alpha
+    protected setDisplayLabel(displayLabel: string): void;
     setVersion(readVersion?: number, writeVersion?: number, minorVersion?: number): void;
     static startLoadingFromJson(jsonObj: object | string, context: SchemaContext): Promise<SchemaInfo>;
     toJSON(): SchemaProps;
@@ -1756,6 +1774,8 @@ export abstract class SchemaItem {
     protected setDescription(description: string): void;
     // @alpha
     protected setDisplayLabel(displayLabel: string): void;
+    // @alpha
+    protected setName(name: string): void;
     toJSON(standalone?: boolean, includeSchemaVersion?: boolean): SchemaItemProps;
     // @internal (undocumented)
     toXml(schemaXml: Document): Promise<Element>;
@@ -1809,39 +1829,39 @@ export interface SchemaItemProps {
     readonly schemaVersion?: string;
 }
 
-// @beta (undocumented)
+// @beta
 export enum SchemaItemType {
     // (undocumented)
-    Constant = 10,
+    Constant = "Constant",
     // (undocumented)
-    CustomAttributeClass = 3,
+    CustomAttributeClass = "CustomAttributeClass",
     // (undocumented)
-    EntityClass = 0,
+    EntityClass = "EntityClass",
     // (undocumented)
-    Enumeration = 5,
+    Enumeration = "Enumeration",
     // (undocumented)
-    Format = 13,
+    Format = "Format",
     // (undocumented)
-    InvertedUnit = 9,
+    InvertedUnit = "InvertedUnit",
     // (undocumented)
-    KindOfQuantity = 6,
+    KindOfQuantity = "KindOfQuantity",
     // (undocumented)
-    Mixin = 1,
+    Mixin = "Mixin",
     // (undocumented)
-    Phenomenon = 11,
+    Phenomenon = "Phenomenon",
     // (undocumented)
-    PropertyCategory = 7,
+    PropertyCategory = "PropertyCategory",
     // (undocumented)
-    RelationshipClass = 4,
+    RelationshipClass = "RelationshipClass",
     // (undocumented)
-    StructClass = 2,
+    StructClass = "StructClass",
     // (undocumented)
-    Unit = 8,
+    Unit = "Unit",
     // (undocumented)
-    UnitSystem = 12
+    UnitSystem = "UnitSystem"
 }
 
-// @beta
+// @beta @deprecated
 export function schemaItemTypeToString(value: SchemaItemType): string;
 
 // @internal (undocumented)
@@ -1982,7 +2002,7 @@ export interface SchemaReferenceProps {
     readonly version: string;
 }
 
-// @alpha
+// @beta
 export class SchemaUnitProvider implements UnitsProvider {
     constructor(contextOrLocater: ISchemaLocater, _unitExtraData?: UnitExtraData[]);
     findUnit(unitLabel: string, schemaName?: string, phenomenon?: string, unitSystem?: string): Promise<UnitProps>;

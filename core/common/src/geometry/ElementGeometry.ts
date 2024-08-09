@@ -7,7 +7,7 @@
  */
 import { flatbuffers } from "flatbuffers";
 import { Id64, Id64String } from "@itwin/core-bentley";
-import { Angle, AngleSweep, Arc3d, BentleyGeometryFlatBuffer, CurveCollection, FrameBuilder, GeometryQuery, LineString3d, Loop, Matrix3d, Plane3dByOriginAndUnitNormal, Point2d, Point3d, Point3dArray, PointString3d, Polyface, PolyfaceQuery, Range2d, Range3d, SolidPrimitive, Transform, Vector3d, YawPitchRollAngles } from "@itwin/core-geometry";
+import { Angle, AngleSweep, Arc3d, BentleyGeometryFlatBuffer, CurveCollection, FrameBuilder, GeometryQuery, LineSegment3d, LineString3d, Loop, Matrix3d, Plane3dByOriginAndUnitNormal, Point2d, Point3d, Point3dArray, PointString3d, Polyface, PolyfaceQuery, Range2d, Range3d, SolidPrimitive, Transform, Vector3d, YawPitchRollAngles } from "@itwin/core-geometry";
 import { EGFBAccessors } from "./ElementGeometryFB";
 import { Base64EncodedString } from "../Base64EncodedString";
 import { TextString, TextStringGlyphData, TextStringProps } from "./TextString";
@@ -21,6 +21,7 @@ import { ImageGraphic, ImageGraphicCorners, ImageGraphicProps } from "./ImageGra
 import { LineStyle } from "./LineStyle";
 import { ElementAlignedBox3d, Placement2d, Placement3d } from "./Placement";
 import { isPlacement2dProps, PlacementProps } from "../ElementProps";
+import { TextBlockGeometryProps } from "../annotation/TextBlockGeometryProps";
 
 /** Specifies the type of an entry in a geometry stream.
  * @see [[ElementGeometryDataEntry.opcode]].
@@ -128,19 +129,21 @@ export interface ElementGeometryRequest {
   minBRepFeatureSize?: number;
 }
 
-/** Parameters for building the geometry stream of a [[GeometricElement]] using ElementGeometry.Builder
- * Note: The geometry stream is always in local coordinates, that is, relative to the element's [[Placement]].
- * @beta
+/** Parameters for building the geometry stream of a [GeometricElement]($backend) using [[ElementGeometry.Builder]].
+ * You can assign an object of this type to [[GeometricElementProps.elementGeometryBuilderParams]] when inserting or updating a geometric element.
+ * @note The geometry stream is always in local coordinates - that is, relative to the element's [[Placement]].
+ * @public
  */
 export interface ElementGeometryBuilderParams {
   /** The geometry stream data. Calling update element with a zero length array will clear the geometry stream and invalidate the placement. */
   entryArray: ElementGeometryDataEntry[];
-  /** If true, create geometry that displays oriented to face the camera */
+  /** If true, create geometry that always displays oriented to face the camera */
   viewIndependent?: boolean;
 }
 
-/** Parameters for building the geometry stream of a [[GeometryPart]] using ElementGeometry.Builder.
- * @beta
+/** Parameters for building the geometry stream of a [GeometryPart]($backend) using [[ElementGeometry.Builder]].
+ * You can assign an object of this type to [[GeometryPartProps.elementGeometryBuilderParams]] when inserting or updating a part.
+ * @public
  */
 export interface ElementGeometryBuilderParamsForPart {
   /** The geometry stream data */
@@ -382,6 +385,32 @@ export namespace ElementGeometry {
       return true;
     }
 
+    /** Append a series of entries representing a [[TextBlock]] to the [[ElementGeometryDataEntry]] array.
+     * @beta
+     */
+    public appendTextBlock(block: TextBlockGeometryProps): boolean {
+      for (const entry of block.entries) {
+        let result: boolean;
+        if (entry.text) {
+          result = this.appendTextString(new TextString(entry.text));
+        } else if (entry.color) {
+          const params = new GeometryParams(Id64.invalid);
+          if (entry.color !== "subcategory") {
+            params.lineColor = ColorDef.fromJSON(entry.color);
+          }
+
+          result = this.appendGeometryParamsChange(params);
+        } else {
+          result = this.appendGeometryQuery(LineSegment3d.fromJSON(entry.separator));
+        }
+
+        if (!result) {
+          return false;
+        }
+      }
+
+      return true;
+    }
     /** Append a [[ImageGraphic]] supplied in either local or world coordinates to the [[ElementGeometryDataEntry]] array */
     public appendImageGraphic(image: ImageGraphic): boolean {
       const entry = ElementGeometry.fromImageGraphic(image.toJSON(), this._worldToLocal);

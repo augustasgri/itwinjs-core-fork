@@ -8,7 +8,7 @@
  */
 
 import { AxisIndex, BeJSONFunctions, Geometry } from "../Geometry";
-import { MultiLineStringDataVariant } from "../topology/Triangulation";
+import { MultiLineStringDataVariant } from "../geometry3d/IndexedXYZCollection";
 import { GrowableXYZArray } from "./GrowableXYZArray";
 import { Matrix3d } from "./Matrix3d";
 import { Point2d, Vector2d } from "./Point2dVector2d";
@@ -16,6 +16,7 @@ import { Point3d, Vector3d } from "./Point3dVector3d";
 import { PointStreamRangeCollector, VariantPointDataStream } from "./PointStreaming";
 import { Transform } from "./Transform";
 import { LowAndHighXY, LowAndHighXYZ, Range1dProps, Range2dProps, Range3dProps, XAndY, XYAndZ } from "./XYZProps";
+
 // allow _EXTREME_POSITIVE and _EXTREME_NEGATIVE
 /* eslint-disable @typescript-eslint/naming-convention */
 /**
@@ -1492,6 +1493,22 @@ export class Range2d extends RangeBase implements LowAndHighXY {
     result.setDirect(this.low.x, this.low.y, this.high.x, this.high.y, false);
     return result;
   }
+
+  /**
+   * Return a copy, translated by adding `shift` components in all directions.
+   * @note The translation of a null range is also a null range.
+   */
+  public cloneTranslated(shift: XAndY, result?: this): this {
+    result = result ? result : new (this.constructor as any)() as this;
+    if (!this.isNull)
+      result.setDirect(
+        this.low.x + shift.x, this.low.y + shift.y,
+        this.high.x + shift.x, this.high.y + shift.y,
+        false,
+      );
+    return result;
+  }
+
   /** Create a range with no content. */
   public static createNull<T extends Range2d>(result?: T): T {
     result = result ? result : new this() as T;

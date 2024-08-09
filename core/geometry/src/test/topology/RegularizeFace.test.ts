@@ -367,11 +367,11 @@ function testRegularize(
   const nonMonotoneFaces: HalfEdge[] = [];
   RegularizationContext.collectMappedFaceRepresentatives(graph, true, (_seed) => RegularizationContext.isMonotoneFace(_seed), monotoneFaces, nonMonotoneFaces);
   if (monotoneFaces.length !== 0) {
-    const mesh1 = PolyfaceBuilder.graphFacesToPolyface(graph, monotoneFaces);
+    const mesh1 = PolyfaceBuilder.graphFacesToPolyface(monotoneFaces);
     if (sweepUp && sweepDown) { // With both sweeps it SHOULD be a complete facet set ...
       const ex = 0.2 * range.xLength();
       const ey = 0.2 * range.yLength();
-      const ls1 = Sample.createRectangleXY(range.low.x - ex, range.low.y - ey, range.xLength() + 2 * ex, range.yLength() + 2 * ey)!;
+      const ls1 = Sample.createRectangleXY(range.low.x - ex, range.low.y - ey, range.xLength() + 2 * ex, range.yLength() + 2 * ey);
       GeometryCoreTestIO.captureGeometry(allGeometry, LineString3d.create(ls1), dx + ax, dy, 0.0);
     }
     GeometryCoreTestIO.captureGeometry(allGeometry, mesh1, dx + ax, dy, 0.0);
@@ -379,7 +379,7 @@ function testRegularize(
   const r0 = -0.25;
   const r1 = 1.25;    // fractions for non-monotone face annotation line.
   if (nonMonotoneFaces.length !== 0) {
-    const mesh1 = PolyfaceBuilder.graphFacesToPolyface(graph, nonMonotoneFaces);
+    const mesh1 = PolyfaceBuilder.graphFacesToPolyface(nonMonotoneFaces);
 
     if (sweepUp && sweepDown) { // With both sweeps this should be empty ...
       let numBad = 0;
@@ -440,11 +440,11 @@ function testFullGraphRegularize(
       exteriorMonotone.push(face);
   }
   if (interiorMonotone.length !== 0) {
-    const mesh1 = PolyfaceBuilder.graphFacesToPolyface(graph, interiorMonotone);
+    const mesh1 = PolyfaceBuilder.graphFacesToPolyface(interiorMonotone);
     if (sweepUp && sweepDown) { // With both sweeps it SHOULD be a complete facet set ...
       const ex = 0.2 * range.xLength();
       const ey = 0.2 * range.yLength();
-      const ls1 = Sample.createRectangleXY(range.low.x - ex, range.low.y - ey, range.xLength() + 2 * ex, range.yLength() + 2 * ey)!;
+      const ls1 = Sample.createRectangleXY(range.low.x - ex, range.low.y - ey, range.xLength() + 2 * ex, range.yLength() + 2 * ey);
       GeometryCoreTestIO.captureGeometry(allGeometry, LineString3d.create(ls1), dx + ax, dy, 0.0);
     }
     GeometryCoreTestIO.captureGeometry(allGeometry, mesh1.clone(), dx + ax, dy, 0.0);
@@ -452,7 +452,7 @@ function testFullGraphRegularize(
   const r0 = -0.25;
   const r1 = 1.25;    // fractions for non-monotone face annotation line.
   if (nonMonotoneFaces.length !== 0) {
-    const mesh1 = PolyfaceBuilder.graphFacesToPolyface(graph, nonMonotoneFaces);
+    const mesh1 = PolyfaceBuilder.graphFacesToPolyface(nonMonotoneFaces);
 
     if (sweepUp && sweepDown) { // With both sweeps this should be empty ...
       let numBad = 0;
@@ -479,7 +479,7 @@ function testFullGraphRegularize(
       for (const f of component)
         if (!f.isMaskSet(HalfEdgeMask.EXTERIOR))
           interiorFaces.push(f);
-      const mesh2 = PolyfaceBuilder.graphFacesToPolyface(graph, interiorFaces);
+      const mesh2 = PolyfaceBuilder.graphFacesToPolyface(interiorFaces);
 
       GeometryCoreTestIO.captureGeometry(allGeometry, mesh2, dx + 2.0 * ax, dy, 0.0);
     }

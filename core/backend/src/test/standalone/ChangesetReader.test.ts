@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { GuidString, Id64 } from "@itwin/core-bentley";
+import { DbResult, GuidString, Id64 } from "@itwin/core-bentley";
 import { Code, ColorDef, GeometryStreamProps, IModel, SubCategoryAppearance } from "@itwin/core-common";
 import { Arc3d, IModelJson, Point3d } from "@itwin/core-geometry";
 import { assert, expect } from "chai";
@@ -14,6 +14,7 @@ import { BriefcaseDb, SnapshotDb } from "../../IModelDb";
 import { SqliteChangesetReader } from "../../SqliteChangesetReader";
 import { HubWrappers, IModelTestUtils } from "../IModelTestUtils";
 import { KnownTestLocations } from "../KnownTestLocations";
+import { _nativeDb, ChannelControl } from "../../core-backend";
 
 describe("Changeset Reader API", async () => {
   let iTwinId: GuidString;
@@ -23,7 +24,151 @@ describe("Changeset Reader API", async () => {
     iTwinId = HubMock.iTwinId;
   });
   after(() => HubMock.shutdown());
+  it("Able to recover from when ExclusiveRootClassId is NULL for overflow table", async () => {
+    /**
+     * 1. Import schema with class that span overflow table.
+     * 2. Insert a element for the class.
+     * 3. Push changes to hub.
+     * 4. Update the element.
+     * 5. Push changes to hub.
+     * 6. Delete the element.
+     * 7. Set ExclusiveRootClassId to NULL for overflow table. (Simulate the issue)
+     * 8. ECChangesetAdaptor should be able to read the changeset 2 in which element is updated against latest imodel where element is deleted.
+     */
+    const adminToken = "super manager token";
+    const iModelName = "test";
+    const nProps = 36;
+    const rwIModelId = await HubMock.createNewIModel({ iTwinId, iModelName, description: "TestSubject", accessToken: adminToken });
+    assert.isNotEmpty(rwIModelId);
+    const rwIModel = await HubWrappers.downloadAndOpenBriefcase({ iTwinId, iModelId: rwIModelId, accessToken: adminToken });
+    // 1. Import schema with class that span overflow table.
+    const schema = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestDomain" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+        <ECEntityClass typeName="Test2dElement">
+            <BaseClass>bis:GraphicalElement2d</BaseClass>
+            ${Array(nProps).fill(undefined).map((_, i) => `<ECProperty propertyName="p${i}" typeName="string"/>`).join("\n")}
+        </ECEntityClass>
+    </ECSchema>`;
+    await rwIModel.importSchemaStrings([schema]);
+    rwIModel.channels.addAllowedChannel(ChannelControl.sharedChannelName);
 
+    // Create drawing model and category
+    await rwIModel.locks.acquireLocks({ shared: IModel.dictionaryId });
+    const codeProps = Code.createEmpty();
+    codeProps.value = "DrawingModel";
+    const [, drawingModelId] = IModelTestUtils.createAndInsertDrawingPartitionAndModel(rwIModel, codeProps, true);
+    let drawingCategoryId = DrawingCategory.queryCategoryIdByName(rwIModel, IModel.dictionaryId, "MyDrawingCategory");
+    if (undefined === drawingCategoryId)
+      drawingCategoryId = DrawingCategory.insert(rwIModel, IModel.dictionaryId, "MyDrawingCategory", new SubCategoryAppearance({ color: ColorDef.fromString("rgb(255,0,0)").toJSON() }));
+
+    // Insert element with 100 properties
+    const geomArray: Arc3d[] = [
+      Arc3d.createXY(Point3d.create(0, 0), 5),
+      Arc3d.createXY(Point3d.create(5, 5), 2),
+      Arc3d.createXY(Point3d.create(-5, -5), 20),
+    ];
+    const geometryStream: GeometryStreamProps = [];
+    for (const geom of geomArray) {
+      const arcData = IModelJson.Writer.toIModelJson(geom);
+      geometryStream.push(arcData);
+    }
+    const props = Array(nProps).fill(undefined).map((_, i) => {
+      return { [`p${i}`]: `test_${i}` };
+    }).reduce((acc, curr) => {
+      return { ...acc, ...curr };
+    }, {});
+
+    const geomElement = {
+      classFullName: `TestDomain:Test2dElement`,
+      model: drawingModelId,
+      category: drawingCategoryId,
+      code: Code.createEmpty(),
+      geom: geometryStream,
+      ...props,
+    };
+
+    // 2. Insert a element for the class.
+    const id = rwIModel.elements.insertElement(geomElement);
+    assert.isTrue(Id64.isValidId64(id), "insert worked");
+    rwIModel.saveChanges();
+
+    // 3. Push changes to hub.
+    await rwIModel.pushChanges({ description: "insert element", accessToken: adminToken });
+
+    // 4. Update the element.
+    const updatedElementProps = Object.assign(
+      rwIModel.elements.getElementProps(id),
+      Array(nProps).fill(undefined).map((_, i) => {
+        return { [`p${i}`]: `updated_${i}` };
+      }).reduce((acc, curr) => {
+        return { ...acc, ...curr };
+      }, {}));
+
+    await rwIModel.locks.acquireLocks({ exclusive: id });
+    rwIModel.elements.updateElement(updatedElementProps);
+    rwIModel.saveChanges();
+
+    // 5. Push changes to hub.
+    await rwIModel.pushChanges({ description: "update element", accessToken: adminToken });
+
+    await rwIModel.locks.acquireLocks({ exclusive: id });
+
+    // 6. Delete the element.
+    rwIModel.elements.deleteElement(id);
+    rwIModel.saveChanges();
+    await rwIModel.pushChanges({ description: "delete element", accessToken: adminToken });
+
+    const targetDir = path.join(KnownTestLocations.outputDir, rwIModelId, "changesets");
+    const changesets = await HubMock.downloadChangesets({ iModelId: rwIModelId, targetDir });
+    const reader = SqliteChangesetReader.openFile({ fileName: changesets[1].pathname, db: rwIModel, disableSchemaCheck: true });
+
+    // Set ExclusiveRootClassId to NULL for overflow table to simulate the issue
+    expect(rwIModel[_nativeDb].executeSql("UPDATE ec_Table SET ExclusiveRootClassId=NULL WHERE Name='bis_GeometricElement2d_Overflow'")).to.be.eq(DbResult.BE_SQLITE_OK);
+
+    const adaptor = new ECChangesetAdaptor(reader);
+    let assertOnOverflowTable = false;
+
+    const expectedInserted = {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      ECClassId: undefined,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      ECInstanceId: "",
+      $meta: {
+        tables: ["bis_GeometricElement2d_Overflow"],
+        op: "Updated",
+        classFullName: "BisCore:GeometricElement2d",
+        fallbackClassId: "0x5e",
+        changeIndexes: [3],
+        stage: "New",
+      },
+    };
+    const expectedDeleted = {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      ECClassId: undefined,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      ECInstanceId: "",
+      $meta: {
+        tables: ["bis_GeometricElement2d_Overflow"],
+        op: "Updated",
+        classFullName: "BisCore:GeometricElement2d",
+        fallbackClassId: "0x5e",
+        changeIndexes: [3],
+        stage: "Old",
+      },
+    };
+
+    while (adaptor.step()) {
+      if (adaptor.op === "Updated" && adaptor.inserted?.$meta?.tables[0] === "bis_GeometricElement2d_Overflow") {
+        assert.deepEqual(adaptor.inserted as any, expectedInserted);
+        assert.deepEqual(adaptor.deleted as any, expectedDeleted);
+        assertOnOverflowTable = true;
+      }
+    }
+
+    assert.isTrue(assertOnOverflowTable);
+    rwIModel.close();
+  });
   it("Changeset reader / EC adaptor", async () => {
     const adminToken = "super manager token";
     const iModelName = "test";
@@ -48,6 +193,7 @@ describe("Changeset Reader API", async () => {
       const postPushChangeSetId = rwIModel.changeset.id;
       assert(!!postPushChangeSetId);
       expect(prePushChangeSetId !== postPushChangeSetId);
+      rwIModel.channels.addAllowedChannel(ChannelControl.sharedChannelName);
     }
     await rwIModel.locks.acquireLocks({ shared: IModel.dictionaryId });
     const codeProps = Code.createEmpty();
@@ -112,7 +258,7 @@ describe("Changeset Reader API", async () => {
     rwIModel.saveChanges("user 1: data");
 
     if ("test local changes") {
-      const reader = SqliteChangesetReader.openLocalChanges({ iModel: rwIModel.nativeDb, db: rwIModel, disableSchemaCheck: true });
+      const reader = SqliteChangesetReader.openLocalChanges({ iModel: rwIModel[_nativeDb], db: rwIModel, disableSchemaCheck: true });
       const adaptor = new ECChangesetAdaptor(reader);
       const cci = new PartialECChangeUnifier();
       while (adaptor.step()) {
@@ -148,7 +294,7 @@ describe("Changeset Reader API", async () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       assert.deepEqual(el.BBoxHigh, { X: 15, Y: 15 });
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      assert.deepEqual(el.Category, { Id: "0x20000000002", RelECClassId: "0x60" });
+      assert.deepEqual(el.Category, { Id: "0x20000000002", RelECClassId: "0x6d" });
       assert.equal(el.s, "xxxxxxxxx");
       assert.isNull(el.CodeValue);
       assert.isNull(el.UserLabel);
@@ -161,11 +307,11 @@ describe("Changeset Reader API", async () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       assert.deepEqual(el.TypeDefinition, { Id: null, RelECClassId: null });
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      assert.deepEqual(el.Category, { Id: "0x20000000002", RelECClassId: "0x60" });
+      assert.deepEqual(el.Category, { Id: "0x20000000002", RelECClassId: "0x6d" });
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      assert.deepEqual(el.CodeSpec, { Id: "0x1", RelECClassId: "0x5c" });
+      assert.deepEqual(el.CodeSpec, { Id: "0x1", RelECClassId: "0x69" });
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      assert.deepEqual(el.CodeScope, { Id: "0x1", RelECClassId: "0x5e" });
+      assert.deepEqual(el.CodeScope, { Id: "0x1", RelECClassId: "0x6b" });
 
       assert.deepEqual(el.$meta, {
         tables: [
@@ -202,7 +348,7 @@ describe("Changeset Reader API", async () => {
 
       // new value
       assert.equal(changes[0].ECInstanceId, "0x20000000004");
-      assert.equal(changes[0].ECClassId, "0x140");
+      assert.equal(changes[0].ECClassId, "0x14d");
       assert.equal(changes[0].s, "updated property");
       assert.equal(changes[0].$meta?.classFullName, "TestDomain:Test2dElement");
       assert.equal(changes[0].$meta?.op, "Updated");
@@ -210,7 +356,7 @@ describe("Changeset Reader API", async () => {
 
       // old value
       assert.equal(changes[1].ECInstanceId, "0x20000000004");
-      assert.equal(changes[1].ECClassId, "0x140");
+      assert.equal(changes[1].ECClassId, "0x14d");
       assert.equal(changes[1].s, "xxxxxxxxx");
       assert.equal(changes[1].$meta?.classFullName, "TestDomain:Test2dElement");
       assert.equal(changes[1].$meta?.op, "Updated");
@@ -285,7 +431,7 @@ describe("Changeset Reader API", async () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       assert.deepEqual(el.BBoxHigh, { X: 15, Y: 15 });
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      assert.deepEqual(el.Category, { Id: "0x20000000002", RelECClassId: "0x60" });
+      assert.deepEqual(el.Category, { Id: "0x20000000002", RelECClassId: "0x6d" });
       assert.equal(el.s, "xxxxxxxxx");
       assert.isNull(el.CodeValue);
       assert.isNull(el.UserLabel);
@@ -298,11 +444,11 @@ describe("Changeset Reader API", async () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       assert.deepEqual(el.TypeDefinition, { Id: null, RelECClassId: null });
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      assert.deepEqual(el.Category, { Id: "0x20000000002", RelECClassId: "0x60" });
+      assert.deepEqual(el.Category, { Id: "0x20000000002", RelECClassId: "0x6d" });
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      assert.deepEqual(el.CodeSpec, { Id: "0x1", RelECClassId: "0x5c" });
+      assert.deepEqual(el.CodeSpec, { Id: "0x1", RelECClassId: "0x69" });
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      assert.deepEqual(el.CodeScope, { Id: "0x1", RelECClassId: "0x5e" });
+      assert.deepEqual(el.CodeScope, { Id: "0x1", RelECClassId: "0x6b" });
 
       assert.deepEqual(el.$meta, {
         tables: [

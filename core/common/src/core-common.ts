@@ -4,6 +4,11 @@
 *--------------------------------------------------------------------------------------------*/
 export * from "./AmbientOcclusion";
 export * from "./AnalysisStyle";
+export * from "./annotation/TextAnnotation";
+export * from "./annotation/TextBlock";
+export * from "./annotation/TextBlockGeometryProps";
+export * from "./annotation/TextBlockLayoutResult";
+export * from "./annotation/TextStyle";
 export * from "./Atmosphere";
 export * from "./AuthorizationClient";
 export * from "./BackgroundMapProvider";
@@ -36,6 +41,7 @@ export * from "./FeatureSymbology";
 export * from "./FeatureTable";
 export * from "./Fonts";
 export * from "./Frustum";
+export * from "./GenericInstanceFilter";
 export * from "./GeoCoordinateServices";
 export * from "./geometry/AdditionalTransform";
 export * from "./geometry/AreaPattern";
@@ -99,7 +105,6 @@ export * from "./RgbColor";
 export * from "./RpcManager";
 export * from "./SessionProps";
 export * from "./SkyBox";
-export * from "./Snapping";
 export * from "./SolarCalculate";
 export * from "./SolarShadows";
 export * from "./SpatialClassification";
@@ -155,6 +160,8 @@ export * from "./tile/TileIO";
 export * from "./tile/TileMetadata";
 export * from "./tile/Tileset3dSchema";
 export * from "./WhiteOnWhiteReversalSettings";
+
+export * from "./internal/cross-package";
 
 /** @docs-package-description
  * The core-common package contains classes for working with iModels that can be used in both [frontend]($docs/learning/frontend/index.md) and [backend]($docs/learning/backend/index.md).
@@ -246,4 +253,8 @@ export * from "./WhiteOnWhiteReversalSettings";
 /**
  * @docs-group-description MapLayers
  * Types for working with the MapLayers API.
+ */
+/**
+ * @docs-group-description Annotation
+ * APIs for producing and manipulating annotations like text, dimensions, and labels.
  */

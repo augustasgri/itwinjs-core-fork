@@ -39,7 +39,6 @@ import { PerModelCategoryVisibility } from "./PerModelCategoryVisibility";
 import { Decorations } from "./render/Decorations";
 import { FeatureSymbology } from "./render/FeatureSymbology";
 import { FrameStats, FrameStatsCollector } from "./render/FrameStats";
-import { GraphicType } from "./render/GraphicBuilder";
 import { AnimationBranchStates } from "./render/GraphicBranch";
 import { Pixel } from "./render/Pixel";
 import { GraphicList } from "./render/RenderGraphic";
@@ -65,6 +64,7 @@ import { ViewStatus } from "./ViewStatus";
 import { queryVisibleFeatures, QueryVisibleFeaturesCallback, QueryVisibleFeaturesOptions } from "./render/VisibleFeature";
 import { FlashSettings } from "./FlashSettings";
 import { GeometricModelState } from "./ModelState";
+import { GraphicType } from "./common/render/GraphicType";
 
 // cSpell:Ignore rect's ovrs subcat subcats unmounting UI's
 
@@ -1047,19 +1047,28 @@ export abstract class Viewport implements IDisposable, TileUser {
   */
   public async getToolTip(hit: HitDetail): Promise<HTMLElement | string> {
     const promises = new Array<Promise<string | HTMLElement | undefined>>();
-    if (this.displayStyle) {
-      this.displayStyle.forEachTileTreeRef(async (tree) => {
-        promises.push(tree.getToolTip(hit).catch(() => undefined));
+    this.view.forEachTileTreeRef((ref) => {
+      const promise = ref.getToolTipPromise(hit);
+      if (promise)
+        promises.push(promise);
+    });
+
+    this.forEachMapTreeRef((ref) => {
+      const promise = ref.getToolTipPromise(hit);
+      if (promise)
+        promises.push(promise);
+    });
+
+    for (const provider of this.tiledGraphicsProviders) {
+      provider.forEachTileTreeRef(this, (ref) => {
+        const promise = ref.getToolTipPromise(hit);
+        if (promise)
+          promises.push(promise);
       });
     }
-    this.forEachMapTreeRef(async (tree) => promises.push(tree.getToolTip(hit)));
 
     const results = await Promise.all(promises);
-    for (const result of results)
-      if (result !== undefined)
-        return result;
-
-    return "";
+    return results.find((result) => undefined !== result) ?? "";
   }
 
   /** Obtain feature information from a map layer model, if any, identified by the specified [[HitDetail]].
@@ -1110,7 +1119,7 @@ export abstract class Viewport implements IDisposable, TileUser {
   protected initialize(): void {
   }
 
-  /** @internal */
+  /** @internal because subclasses must derive from ScreenViewport or OffScreenviewport. */
   protected constructor(target: RenderTarget) {
     this._target = target;
     target.assignFrameStatsCollector(this._frameStatsCollector);
@@ -2011,7 +2020,7 @@ export abstract class Viewport implements IDisposable, TileUser {
 
     const distXYZ = new Point3d(screenDist.x, screenDist.y, 0);
     if (view.is3d() && view.isCameraOn) {
-      const frust = this.getFrustum(CoordSystem.View, false)!;
+      const frust = this.getFrustum(CoordSystem.View, false);
       frust.translate(distXYZ);
       this.viewToWorldArray(frust.points);
       view.setupFromFrustum(frust);
@@ -3125,7 +3134,6 @@ export class ScreenViewport extends Viewport {
     logo.onmousemove = logo.onmousedown = logo.onmouseup = (ev) => ev.stopPropagation();
   }
 
-  /** @internal */
   protected constructor(canvas: HTMLCanvasElement, parentDiv: HTMLDivElement, target: RenderTarget) {
     super(target);
     this.canvas = canvas;
@@ -3715,7 +3723,6 @@ export class OffScreenViewport extends Viewport {
   protected _isAspectRatioLocked = false;
   private _drawingToSheetTransform?: Transform;
 
-  /** @internal */
   protected constructor(target: RenderTarget) {
     super(target);
   }

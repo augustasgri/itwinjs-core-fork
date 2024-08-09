@@ -10,8 +10,7 @@
 /* eslint-disable @typescript-eslint/naming-convention, no-empty */
 import { Geometry } from "../Geometry";
 import { Point4d } from "../geometry4d/Point4d";
-import { MultiLineStringDataVariant } from "../topology/Triangulation";
-import { IndexedXYZCollection } from "./IndexedXYZCollection";
+import { IndexedXYZCollection, MultiLineStringDataVariant } from "./IndexedXYZCollection";
 import { Plane3dByOriginAndUnitNormal } from "./Plane3dByOriginAndUnitNormal";
 import { Point2d } from "./Point2dVector2d";
 import { Point3dArrayCarrier } from "./Point3dArrayCarrier";
@@ -557,6 +556,25 @@ export class Point3dArray {
     const numValues = 3 * data.length;
     if (!result || result.length < numValues)
       result = new Float64Array(numValues);
+    let i = 0;
+    for (const p of data) {
+      result[i++] = p.x;
+      result[i++] = p.y;
+      result[i++] = p.z;
+    }
+    return result;
+  }
+  /**
+   * Copy 3d points into a packed number array.
+   * @param data array of xyz
+   * @param result optional destination array.
+   * @return packed number array
+   */
+  public static packToNumberArray(data: Point3d[], result?: number[]): number[] {
+    const numValues = 3 * data.length;
+    if (!result)
+      result = Array<number>(numValues);
+    result.length = numValues;
     let i = 0;
     for (const p of data) {
       result[i++] = p.x;

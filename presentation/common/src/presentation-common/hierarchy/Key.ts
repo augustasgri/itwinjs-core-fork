@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the project root for license terms and full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the project root for license terms and full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 /** @packageDocumentation
  * @module Hierarchies
  */
@@ -26,7 +26,8 @@ export enum StandardNodeTypes {
  */
 export type NodeKey = BaseNodeKey | ECInstancesNodeKey | ECClassGroupingNodeKey | ECPropertyGroupingNodeKey | LabelGroupingNodeKey;
 /** @public */
-export namespace NodeKey { // eslint-disable-line @typescript-eslint/no-redeclare
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export namespace NodeKey {
   /**
    * Serialize given [[NodeKey]] to JSON
    * @deprecated in 3.x. Use [[NodeKey]].
@@ -92,7 +93,7 @@ export namespace NodeKey { // eslint-disable-line @typescript-eslint/no-redeclar
   export function isGroupingNodeKey(key: NodeKeyJSON): key is GroupingNodeKeyJSON;
   // eslint-disable-next-line deprecation/deprecation
   export function isGroupingNodeKey(key: NodeKey | NodeKeyJSON) {
-    return isClassGroupingNodeKey(key) || isPropertyGroupingNodeKey(key) || isLabelGroupingNodeKey(key);
+    return isClassGroupingNodeKey(key) || isPropertyGroupingNodeKey(key) || isLabelGroupingNodeKey(key); // eslint-disable-line deprecation/deprecation
   }
 
   /**
@@ -106,18 +107,21 @@ export namespace NodeKey { // eslint-disable-line @typescript-eslint/no-redeclar
    */
   export function equals(lhs: NodeKey, rhs: NodeKey): boolean {
     // types must always be equal
-    if (lhs.type !== rhs.type)
+    if (lhs.type !== rhs.type) {
       return false;
+    }
 
     // `pathFromRoot` lengths must always be equal
-    if (lhs.pathFromRoot.length !== rhs.pathFromRoot.length)
+    if (lhs.pathFromRoot.length !== rhs.pathFromRoot.length) {
       return false;
+    }
 
     // when versions are equal, compare using contents of `pathFromRoot` array
     if (lhs.version === rhs.version) {
       for (let i = 0; i < lhs.pathFromRoot.length; ++i) {
-        if (lhs.pathFromRoot[i] !== rhs.pathFromRoot[i])
+        if (lhs.pathFromRoot[i] !== rhs.pathFromRoot[i]) {
           return false;
+        }
       }
       return true;
     }
@@ -126,11 +130,13 @@ export namespace NodeKey { // eslint-disable-line @typescript-eslint/no-redeclar
     // of different key versions can't be compared
     if (isInstancesNodeKey(lhs)) {
       assert(isInstancesNodeKey(rhs));
-      if (lhs.instanceKeys.length !== rhs.instanceKeys.length)
+      if (lhs.instanceKeys.length !== rhs.instanceKeys.length) {
         return false;
+      }
       for (let i = 0; i < lhs.instanceKeys.length; ++i) {
-        if (0 !== InstanceKey.compare(lhs.instanceKeys[i], rhs.instanceKeys[i]))
+        if (0 !== InstanceKey.compare(lhs.instanceKeys[i], rhs.instanceKeys[i])) {
           return false;
+        }
       }
       return true;
     }
@@ -173,9 +179,7 @@ export interface BaseNodeKey {
   /** Node hash path from root to the node whose key this is */
   pathFromRoot: string[];
 
-  /** Query that returns all selected instance keys
-   * @alpha
-   */
+  /** Query that returns all selected instance keys */
   instanceKeysSelectQuery?: PresentationQuery;
 }
 /**
@@ -188,7 +192,6 @@ export interface BaseNodeKeyJSON {
   // TODO: make this required
   version?: number;
   pathFromRoot: string[];
-  /** @alpha */
   instanceKeysSelectQuery?: PresentationQuery;
 }
 
@@ -307,7 +310,7 @@ export type NodeKeyJSON = BaseNodeKeyJSON | ECInstancesNodeKeyJSON | ECClassGrou
 
 /**
  * Data structure that describes a presentation query
- * @alpha
+ * @public
  */
 export interface PresentationQuery {
   /** ECSQL query */
@@ -316,33 +319,40 @@ export interface PresentationQuery {
   bindings?: PresentationQueryBinding[];
 }
 
-/** @alpha */
-export interface BasePresentationQueryBinding {
-  type: "Id" | "IdSet" | "ECValue" | "ValueSet";
-}
-
-/** @alpha */
-export interface IdBinding extends BasePresentationQueryBinding {
+/**
+ * Defines an [[Id64String]] value binding.
+ * @public
+ */
+export interface IdBinding {
   type: "Id";
   value: Id64String;
 }
 
-/** @alpha */
-export interface IdSetBinding extends BasePresentationQueryBinding {
+/**
+ * Defines an [[IdSet]] value binding for use with `InVirtualSet` ECSQL function.
+ * @public
+ */
+export interface IdSetBinding {
   type: "IdSet";
   value: Id64String[];
 }
 
-/** @alpha */
-export interface ECValueBinding extends BasePresentationQueryBinding {
+/**
+ * Defines an EC value binding.
+ * @public
+ */
+export interface ECValueBinding {
   type: "ECValue";
   valueType: string;
   valueTypeExtended?: string;
   value: any;
 }
 
-/** @alpha */
-export interface ECValueSetBinding extends BasePresentationQueryBinding {
+/**
+ * Defines a binding for a list of EC values for use with `InVirtualSet` ECSQL function.
+ * @public
+ */
+export interface ECValueSetBinding {
   type: "ValueSet";
   valueType: string;
   valueTypeExtended?: string;
@@ -350,7 +360,7 @@ export interface ECValueSetBinding extends BasePresentationQueryBinding {
 }
 
 /**
- * One of the presentation query binding types
- * @alpha
+ * One of the [[PresentationQuery]] binding types.
+ * @public
  */
 export type PresentationQueryBinding = IdBinding | IdSetBinding | ECValueBinding | ECValueSetBinding;

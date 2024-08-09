@@ -7,22 +7,90 @@
 import { AccessToken } from '@itwin/core-bentley';
 import { IModelConnection } from '@itwin/core-frontend';
 
+// @alpha
+export function attachGeoscienceTileset(args: AttachGeoscienceTilesetArgs): Promise<void>;
+
+// @alpha
+export type AttachGeoscienceTilesetArgs = BaseGeoscienceArgs;
+
+// @alpha
+export interface BaseGeoscienceArgs {
+    accessToken: string;
+    endpointUrl: string;
+    geoscienceObjectId: string;
+    organizationId: string;
+    workspaceId: string;
+}
+
 // @beta
 export type ComputeSpatialTilesetBaseUrl = (iModel: IModelConnection) => Promise<URL | undefined>;
 
 // @beta
+export interface DataSource {
+    changeId?: string;
+    id: string;
+    iTwinId: string;
+    type: string;
+}
+
+// @beta
 export interface FrontendTilesOptions {
     computeSpatialTilesetBaseUrl?: ComputeSpatialTilesetBaseUrl;
+    enableCDN?: boolean;
     // @internal
     enableEdges?: boolean;
     maxLevelsToSkip?: number;
+    // @internal
+    nopFallback?: boolean;
+    // @internal
+    useIndexedDBCache?: boolean;
 }
 
 // @internal
 export const frontendTilesOptions: {
     maxLevelsToSkip: number;
     enableEdges: boolean;
+    useIndexedDBCache: boolean;
 };
+
+// @alpha
+export interface GetGeoscienceTilesetArgs extends BaseGeoscienceArgs {
+    enableCDN?: boolean;
+    urlPrefix?: string;
+}
+
+// @alpha
+export function getGeoscienceTilesetUrl(args: GetGeoscienceTilesetArgs): Promise<string | undefined>;
+
+// @beta
+export type GraphicRepresentation = {
+    displayName: string;
+    representationId: string;
+    status: GraphicRepresentationStatus;
+    format: GraphicRepresentationFormat;
+    dataSource: DataSource;
+} & ({
+    status: Omit<GraphicRepresentationStatus, GraphicRepresentationStatus.Complete>;
+    url?: string;
+} | {
+    status: GraphicRepresentationStatus.Complete;
+    url: string;
+});
+
+// @beta
+export type GraphicRepresentationFormat = "IMDL" | "3DTILES" | string;
+
+// @beta
+export enum GraphicRepresentationStatus {
+    // (undocumented)
+    Complete = "Complete",
+    // (undocumented)
+    Failed = "Failed",
+    // (undocumented)
+    InProgress = "In progress",
+    // (undocumented)
+    NotStarted = "Not started"
+}
 
 // @beta
 export function initializeFrontendTiles(options: FrontendTilesOptions): void;
@@ -64,13 +132,48 @@ export interface MeshExports {
 }
 
 // @beta
+export function obtainGraphicRepresentationUrl(args: ObtainGraphicRepresentationUrlArgs): Promise<URL | undefined>;
+
+// @beta
+export interface ObtainGraphicRepresentationUrlArgs {
+    accessToken: AccessToken;
+    dataSource: DataSource;
+    enableCDN?: boolean;
+    format: GraphicRepresentationFormat;
+    requireExactVersion?: boolean;
+    sessionId: string;
+    urlPrefix?: string;
+}
+
+// @beta
+export function obtainIModelTilesetUrl(args: ObtainIModelTilesetUrlArgs): Promise<URL | undefined>;
+
+// @beta
+export interface ObtainIModelTilesetUrlArgs {
+    accessToken: AccessToken;
+    enableCDN?: boolean;
+    iModel: IModelConnection;
+    requireExactChangeset?: boolean;
+    urlPrefix?: string;
+}
+
+// @beta
 export function obtainMeshExportTilesetUrl(args: ObtainMeshExportTilesetUrlArgs): Promise<URL | undefined>;
 
 // @beta
-export interface ObtainMeshExportTilesetUrlArgs {
+export type ObtainMeshExportTilesetUrlArgs = ObtainIModelTilesetUrlArgs;
+
+// @beta
+export function queryGraphicRepresentations(args: QueryGraphicRepresentationsArgs): AsyncIterableIterator<GraphicRepresentation>;
+
+// @beta
+export interface QueryGraphicRepresentationsArgs {
     accessToken: AccessToken;
-    iModel: IModelConnection;
-    requireExactChangeset?: boolean;
+    dataSource: DataSource;
+    enableCDN?: boolean;
+    format: GraphicRepresentationFormat;
+    includeIncomplete?: boolean;
+    sessionId: string;
     urlPrefix?: string;
 }
 
@@ -81,8 +184,10 @@ export function queryMeshExports(args: QueryMeshExportsArgs): AsyncIterableItera
 export interface QueryMeshExportsArgs {
     accessToken: AccessToken;
     changesetId?: string;
+    enableCDN?: boolean;
     iModelId: string;
     includeIncomplete?: boolean;
+    iTwinId: string;
     urlPrefix?: string;
 }
 

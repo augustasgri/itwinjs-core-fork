@@ -23,6 +23,8 @@ import { IModelJson } from "../serialization/IModelJsonSchema";
 import { GeometryCoreTestIO } from "./GeometryCoreTestIO";
 import { prettyPrint } from "./testFunctions";
 
+type NonUndefined<T> = T extends undefined ? never : T;
+
 export class Checker {
   private _savedErrors: number;
   private _savedOK: number;
@@ -198,6 +200,7 @@ export class Checker {
     }
     return this.announceOK();
   }
+  /** Test if both ranges have equal low and high parts, or both are null ranges. */
   public testRange3d(dataA: Range3d, dataB: Range3d, ...params: any[]): boolean {
     if (dataA.isAlmostEqual(dataB))
       return this.announceOK();
@@ -251,15 +254,16 @@ export class Checker {
 
     return false;
   }
-  public testUndefined(dataA: any, ...params: any[]): boolean {
+  public testUndefined(dataA: any, ...params: any[]): dataA is undefined {
     if (dataA === undefined)
       return this.announceOK();
     this.announceError("Expect undefined", dataA, params);
 
     return false;
   }
+
   /** Fails if dataA is undefined */
-  public testDefined(dataA: any, ...params: any[]): boolean {
+  public testDefined<T>(dataA: T, ...params: any[]): dataA is NonUndefined<T> {
     if (dataA !== undefined)
       return this.announceOK();
     this.announceError("Expect defined", dataA, params);

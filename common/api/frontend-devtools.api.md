@@ -184,6 +184,13 @@ export class AttachModelMapLayerTool extends Tool {
 }
 
 // @beta
+export class AttachOgcApiFeaturesMapLayerTool extends AttachMapLayerByURLBaseTool {
+    constructor();
+    // (undocumented)
+    static toolId: string;
+}
+
+// @beta
 export class AttachRealityModelTool extends Tool {
     // (undocumented)
     static get maxArgs(): number;
@@ -2271,6 +2278,14 @@ export class ToggleFrustumSnapshotTool extends Tool {
     parseAndRun(...args: string[]): Promise<boolean>;
     // (undocumented)
     run(enable?: boolean, showPreloadFrustum?: boolean, showBackgroundIntersections?: boolean): Promise<boolean>;
+    // (undocumented)
+    static toolId: string;
+}
+
+// @beta
+export class ToggleMaskFrustumTool extends RenderTargetDebugControlToggleTool {
+    // (undocumented)
+    get aspect(): DebugControlBoolean;
     // (undocumented)
     static toolId: string;
 }

@@ -1587,8 +1587,20 @@ export class SmallSystem {
       result);
   }
   /**
-   * Return true if lines (a0,a1) to (b0, b1) have closest approach (go by each other) in 3d
+   * Return true if the given rays have closest approach (go by each other) in 3d
    * Return the fractional (not xy) coordinates as x and y parts of a Point2d.
+   * @param ax x-coordinate of the origin of the first ray
+   * @param ay y-coordinate of the origin of the first ray
+   * @param az z-coordinate of the origin of the first ray
+   * @param au x-coordinate of the direction vector of the first ray
+   * @param av y-coordinate of the direction vector of the first ray
+   * @param aw z-coordinate of the direction vector of the first ray
+   * @param bx x-coordinate of the origin of the second ray
+   * @param by y-coordinate of the origin of the second ray
+   * @param bz z-coordinate of the origin of the second ray
+   * @param bu x-coordinate of the direction vector of the second ray
+   * @param bv y-coordinate of the direction vector of the second ray
+   * @param bw z-coordinate of the direction vector of the second ray
    * @param result point to receive fractional coordinates of intersection.   result.x is fraction on line a. result.y is fraction on line b.
    */
   public static ray3dXYZUVWClosestApproachUnbounded(
@@ -1638,10 +1650,10 @@ export class SmallSystem {
     return false;
   }
   /**
-   * Solve a linear system
-   * * x equation: `ux *u * vx * v + wx * w = cx`
-   * * y equation: `uy *u * vy * v + wy * w = cy`
-   * * z equation: `uz *u * vz * v + wz * w = cz`
+   * Solve a linear system:
+   * * x equation: `axx * u + axy * v + axz * w = cx`
+   * * y equation: `ayx * u + ayy * v + ayz * w = cy`
+   * * z equation: `azx * u + azy * v + azz * w = cz`
    * @param axx row 0, column 0 coefficient
    * @param axy row 0, column 1 coefficient
    * @param axz row 0, column 1 coefficient
@@ -1655,13 +1667,15 @@ export class SmallSystem {
    * @param cy right hand side row 1 coefficient
    * @param cz right hand side row 2 coefficient
    * @param result optional result.
+   * @returns solution vector (u,v,w) or `undefined` if system is singular.
    */
   public static linearSystem3d(
     axx: number, axy: number, axz: number, // first row of matrix
     ayx: number, ayy: number, ayz: number, // second row of matrix
     azx: number, azy: number, azz: number, // second row of matrix
-    cx: number, cy: number, cz: number, // right side
-    result?: Vector3d): Vector3d | undefined {
+    cx: number, cy: number, cz: number,    // right side
+    result?: Vector3d,
+  ): Vector3d | undefined {
     // determinants of various combinations of columns ...
     const detXYZ = Geometry.tripleProduct(axx, ayx, azx, axy, ayy, azy, axz, ayz, azz);
     const detCYZ = Geometry.tripleProduct(cx, cy, cz, axy, ayy, azy, axz, ayz, azz);

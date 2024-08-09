@@ -23,7 +23,7 @@ import { HitDetail } from "../HitDetail";
 import { IModelApp } from "../IModelApp";
 import { IModelConnection } from "../IModelConnection";
 import { RealityDataSource } from "../RealityDataSource";
-import { Mesh } from "../render/primitives/mesh/MeshPrimitives";
+import { Mesh } from "../common/internal/render/MeshPrimitives";
 import { RenderGraphic } from "../render/RenderGraphic";
 import { RenderMemory } from "../render/RenderMemory";
 import { RenderSystem } from "../render/RenderSystem";
@@ -521,6 +521,11 @@ export class OrbitGtTreeReference extends RealityModelTileTree.Reference {
 
     const ogtTreeId: OrbitGtTreeId = { rdSourceKey: this._rdSourceKey, modelId: this.modelId };
     this.treeOwner = orbitGtTreeSupplier.getOwner(ogtTreeId, props.iModel);
+  }
+
+  public override canSupplyToolTip(hit: HitDetail): boolean {
+    const tree = this.treeOwner.tileTree;
+    return undefined !== tree && hit.iModel === tree.iModel;
   }
 
   public override async getToolTip(hit: HitDetail): Promise<HTMLElement | string | undefined> {
