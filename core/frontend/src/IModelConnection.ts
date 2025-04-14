@@ -231,7 +231,7 @@ export abstract class IModelConnection extends IModel {
     this.hilited = new HiliteSet(this);
 
     this.tiles = new Tiles(this);
-    this.geoServices = GeoServices.createForIModel(this);
+    this.geoServices = GeoServices.createForIModel(this, this._iModelReadApi);
     /* eslint-disable-next-line @typescript-eslint/no-deprecated */
     this.displayedExtents = Range3d.fromJSON(this.projectExtents);
 
@@ -729,7 +729,13 @@ export class BlankConnection extends IModelConnection {
     const mockIModelReadApi: IModelReadAPI = {
       getConnectionProps: async () => props,
       getTooltipMessage: async () => ({ lines: [] }),
-      async *runQuery () {},
+      async *runQuery() { },
+      async getIModelCoordinatesFromGeoCoordinates (_props: IModelCoordinatesRequest): Promise<IModelCoordinatesResponse> {
+        throw new Error("Function not implemented.");
+      },
+      async getGeoCoordinatesFromIModelCoordinates (_props: GeoCoordinatesRequest): Promise<GeoCoordinatesResponse> {
+        throw new Error("Function not implemented.");
+      }
     }
 
     super(props, mockIModelReadApi);
