@@ -23,7 +23,7 @@ import { IModelConnection } from "./IModelConnection";
 import { PlanarClipMaskState } from "./PlanarClipMaskState";
 import { getCesiumOSMBuildingsUrl, MapLayerIndex, TileTreeReference } from "./tile/internal";
 import { _onScheduleScriptReferenceChanged, _scheduleScriptReference } from './common/internal/Symbols';
-import { getAllElementIdsFromScript, getScriptDelta } from "./ScriptUtils";
+import { getAllElementIdsFromScript, getScriptDelta, ReactiveTimeline } from "./ScriptUtils";
 
 /** @internal */
 export class TerrainDisplayOverrides {
@@ -60,7 +60,7 @@ export abstract class DisplayStyleState extends ElementState implements DisplayS
   /** @internal */
   protected _queryRenderTimelinePropsPromise?: Promise<RenderTimelineProps | undefined>;
   private _assigningScript = false;
-
+  public reactiveTimeline?: ReactiveTimeline;
 
   /** Event raised just before the [[scheduleScriptReference]] property is changed.
   * @internal as of 5.0, use [[onScheduleScriptChanged]].
@@ -324,6 +324,13 @@ export abstract class DisplayStyleState extends ElementState implements DisplayS
     this.onScheduleEditingChanged.raiseEvent({ changedElementIds: allIds });
 
     this.scheduleScript = initialScript;
+  }
+
+  public beginScheduleEditingTest(initialScript: RenderSchedule.Script): void {
+    this.reactiveTimeline = new ReactiveTimeline(initialScript);
+    this.reactiveTimeline.testOnChanged.addListener(() => {
+      this.onScheduleEditingChanged.raiseEvent({ changedElementIds: getAllElementIdsFromScript(this.reactiveTimeline!.script) });
+    });
   }
 
   /** Update the script in the current editing session. Fires onScheduleEditingChanged. */

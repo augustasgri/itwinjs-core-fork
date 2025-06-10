@@ -1306,6 +1306,7 @@ export abstract class Viewport implements Disposable, TileUser {
 
 
     const scheduleEditingChanged = (change: { changedElementIds: Set<Id64String> }) => {
+      console.log("testOnChanged called");
       for (const ref of this.getTileTreeRefs()) {
         const tree = ref.treeOwner.tileTree;
         if (tree instanceof IModelTileTree) {
@@ -1325,6 +1326,15 @@ export abstract class Viewport implements Disposable, TileUser {
 
     removals.push(style.onScheduleEditingChanged.addListener(scheduleEditingChanged));
     removals.push(style.onScheduleEditingCommitted.addListener(scheduleEditingCommitted));
+
+
+    removals.push(style.onScheduleEditingChanged.addListener(scheduleEditingChanged));
+    const test = () => {
+      console.log("testOnChanged called");
+    };
+    const testRemoval = style.reactiveTimeline?.testOnChanged.addListener(test);
+    if (testRemoval)
+      removals.push(testRemoval);
 
     removals.push(settings.onViewFlagsChanged.addListener((vf) => {
       if (vf.backgroundMap !== this.viewFlags.backgroundMap)

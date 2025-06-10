@@ -280,7 +280,7 @@ export class TestScheduleScriptTool extends DisplayStyleTool {
     if (!this._script)
       return false;
 
-    vp.displayStyle.beginScheduleEditing(this._script);
+    vp.displayStyle.beginScheduleEditingTest(this._script);
     // editingScope.updateScript(this._script);
 
     return true;

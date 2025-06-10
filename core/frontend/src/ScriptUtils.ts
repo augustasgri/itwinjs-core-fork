@@ -1,4 +1,4 @@
-import { Id64String } from "@itwin/core-bentley";
+import { BeEvent, Id64String } from "@itwin/core-bentley";
 import { RenderSchedule } from "@itwin/core-common";
 
 export function getScriptDelta(prev: RenderSchedule.Script, next: RenderSchedule.Script): Set<Id64String> {
@@ -127,4 +127,27 @@ export function getAllElementIdsFromScript(script: RenderSchedule.Script): Set<I
     }
   }
   return ids;
+}
+
+export class ReactiveTimeline {
+  private _script: RenderSchedule.Script;
+  public readonly testOnChanged = new BeEvent<() => void>();
+
+  constructor(script: RenderSchedule.Script) {
+    this._script = script;
+    this.testOnChanged.raiseEvent();
+  }
+
+  public get script() {
+    return this._script;
+  }
+  public set script(newScript: RenderSchedule.Script) {
+    this._script = newScript;
+    this.testOnChanged.raiseEvent();
+  }
+
+  public updateTimeline(updater: (script: RenderSchedule.Script) => RenderSchedule.Script) {
+    this._script = updater(this._script);
+    this.testOnChanged.raiseEvent();
+  }
 }
