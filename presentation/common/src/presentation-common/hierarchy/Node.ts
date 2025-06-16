@@ -22,7 +22,7 @@ export interface Node {
   description?: string;
   /**
    * Image ID
-   * @deprecated in 3.x. Use [[extendedData]] instead. See [extended data usage page]($docs/presentation/customization/ExtendedDataUsage.md) for more details. Will
+   * @deprecated in 3.x - will not be removed until 2026-06-16. Use [[extendedData]] instead. See [extended data usage page]($docs/presentation/customization/ExtendedDataUsage.md) for more details. Will
    * be removed with [[PropertyGroup.imageId]] and [[PropertyRangeGroupSpecification.imageId]].
    */
   imageId?: string;
