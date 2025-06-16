@@ -190,9 +190,9 @@ jobs:
             displayName: Checkout to up-to-date master
 
           - bash: |
-              COMMIT_HASH=$(getDeprecationCommit.hash)
-              echo "Attempting to cherry-pick commit: $COMMIT_HASH"
-              git cherry-pick $COMMIT_HASH
+              commitHash=$(getDeprecationCommit.hash)
+              echo "Attempting to cherry-pick commit: $commitHash"
+              git cherry-pick $commitHash
               git push
             displayName: Attempt cherry-pick operation
             name: cherryPickMaster
@@ -223,8 +223,6 @@ jobs:
               git add .
               git commit -m "Add conflicting deprecation comment changes"
               git push origin $conflictBranchName
-              git cherry-pick --abort
-
               echo "Fix conflicts on branch '$conflictBranchName' and merge changes into master"
             displayName: Handle cherry-pick conflicts
             condition: failed('cherryPickMaster')
