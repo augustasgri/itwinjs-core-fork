@@ -193,6 +193,7 @@ jobs:
               COMMIT_HASH=$(getDeprecationCommit.hash)
               echo "Attempting to cherry-pick commit: $COMMIT_HASH"
               git cherry-pick $COMMIT_HASH
+              git push
             displayName: Attempt cherry-pick operation
             name: cherryPickMaster
             continueOnError: true
@@ -228,7 +229,7 @@ jobs:
             displayName: Handle cherry-pick conflicts
             condition: failed('cherryPickMaster')
 
-          - bash: git checkout --track origin/$(Build.SourceBranchName)
+          - bash: git checkout origin/$(Build.SourceBranchName)
             displayName: Checkout back to release branch
 
       - bash: |
