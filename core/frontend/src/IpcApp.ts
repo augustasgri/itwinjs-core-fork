@@ -115,7 +115,7 @@ export class IpcApp {
   }
 
   /** @internal
-   * @deprecated in 4.8. Use [[makeIpcProxy]] for a type-safe interface.
+   * @deprecated in 4.8 - will not be removed until 2026-06-16. Use [[makeIpcProxy]] for a type-safe interface.
    */
   public static async callIpcChannel(channelName: string, methodName: string, ...args: any[]): Promise<any> {
     return this[_callIpcChannel](channelName, methodName, ...args);

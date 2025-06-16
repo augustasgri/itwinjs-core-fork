@@ -22,7 +22,7 @@ export interface OpenAPIDocument {
 
 /** An OpenAPI 3.0 info object.
  * @public
- * @deprecated in 3.6. The RPC system will be significantly refactored (or replaced) in the future.
+ * @deprecated in 3.6 - will not be removed until 2026-06-16. The RPC system will be significantly refactored (or replaced) in the future.
  */
 export interface OpenAPIInfo {
   title: string;
