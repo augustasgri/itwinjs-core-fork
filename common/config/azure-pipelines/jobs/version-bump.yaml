@@ -191,40 +191,36 @@ jobs:
               commitHash=$(deprecationCommit.hash)
               echo "Attempting to cherry-pick commit: $commitHash"
               if git cherry-pick $commitHash; then
+                # Happy path when no merge conflicts are encountered with master
                 echo "Successfully applied deprecation comment updates to master"
                 git push
               else
+                # Merge conflicts prevent us from committing changes to master
+                # We create a branch with conflicting changes. Then it is expected
+                # for human to pull the branch, solve conflicts and merge changes
                 echo "Cherry-pick operation on master failed (most likely merge conflicts). Manual intervention required"
                 git cherry-pick --abort
+
+                # Create and checkout to manual conflict handling branch
+                conflictBranchName="cherry-pick-conflict-$(date +%y%m%d%H%m%s)"
+                echo "Creating new branch '$conflictBranchName' for manual resolution"
+                git checkout -b $conflictBranchName
+                echo "##vso[task.setvariable variable=name;isOutput=true]$conflictBranchName"
+
+                # Cherry-pick changes onto conflict handling branch
+                commitHash=$(deprecationCommit.hash)
+                git cherry-pick $commitHash # we expect this to fail with conflicts
+
+                # Commit and push all changes
+                conflictBranchName=$(conflictBranch.name)
+                git add .
+                git commit -m "Add deprecation comment changes with all merge conflicts"
+                git push origin $conflictBranchName
+                echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
               fi
-            displayName: Attempt cherry-pick operation
+            displayName: Perform cherry-pick operation for deprecation changes
             name: cherryPickMaster
             continueOnError: true
-
-          - bash: |
-              conflictBranchName="cherry-pick-conflict-$(date +%y%m%d%H%m%s)"
-              echo "Creating new branch '$conflictBranchName' for manual resolution"
-              git checkout -b $conflictBranchName
-              echo "##vso[task.setvariable variable=name;isOutput=true]$conflictBranchName"
-            displayName: Create and checkout to manual conflict handling branch
-            name: conflictBranch
-            condition: failed('cherryPickMaster')
-
-          - bash: |
-              commitHash=$(deprecationCommit.hash)
-              git cherry-pick $commitHash # we expect this to fail with conflicts
-            displayName: Cherry-pick changes onto conflict handling branch
-            continueOnError: true
-            condition: failed('cherryPickMaster')
-
-          - bash: |
-              conflictBranchName=$(conflictBranch.name)
-              git add .
-              git commit -m "Add deprecation comment changes with all merge conflicts"
-              git push origin $conflictBranchName
-              echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
-            displayName: Commit and push all changes (merge conflicts included)
-            condition: failed('cherryPickMaster')
 
           - bash: git checkout origin/$(Build.SourceBranchName)
             displayName: Checkout back to release branch
