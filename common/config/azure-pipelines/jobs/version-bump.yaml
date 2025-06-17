@@ -187,8 +187,7 @@ jobs:
             name: deprecationCommit
 
           - bash: |
-              git checkout master
-              git pull origin master
+              git checkout origin/master
             displayName: Checkout to up-to-date master
 
           - bash: |
@@ -197,7 +196,7 @@ jobs:
               if git cherry-pick $commitHash; then
                 # Happy path when no merge conflicts are encountered with master
                 echo "Successfully applied deprecation comment updates to master"
-                git push
+                git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork HEAD:master
               else
                 # Merge conflicts prevent us from committing changes to master
                 # We create a branch with conflicting changes. Then it is expected
