@@ -28,7 +28,7 @@ parameters:
       - releaseCandidate
 
 variables:
-  - name: GITHUBTOKEN
+  - name: MYGITHUBTOKEN
   - name: testVar
     value: "test no"
 
@@ -183,7 +183,7 @@ jobs:
               relBranchName="release/"$(Build.SourceBranchName)
               echo "release branch name is $relBranchName"
               echo "env variable is $(testVar)"
-              git push https://$(GITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $relBranchName
+              git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $relBranchName
               # Get the SHA-1 hash of deprecation changes commit to apply it later on master
               deprecationDateCommitHash=$(git log -1 --format=%H)
               echo "##vso[task.setvariable variable=hash;isOutput=true]$deprecationDateCommitHash"
