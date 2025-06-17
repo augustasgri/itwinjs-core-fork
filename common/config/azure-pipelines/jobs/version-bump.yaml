@@ -187,6 +187,7 @@ jobs:
             name: deprecationCommit
 
           - bash: |
+              git fetch --depth=1
               git checkout origin/master
             displayName: Checkout to up-to-date master
 
