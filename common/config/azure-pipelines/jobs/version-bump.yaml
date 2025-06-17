@@ -217,15 +217,15 @@ jobs:
                 # Commit and push all changes
                 git add .
                 git commit -m "Add deprecation comment changes with all merge conflicts"
-                git push origin $conflictBranchName
+                git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName
                 echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
               fi
             displayName: Perform cherry-pick operation for deprecation changes
             name: cherryPickMaster
             continueOnError: true
 
-          - bash: git checkout origin/$(Build.SourceBranchName)
-            displayName: Checkout back to release branch
+          - bash: git checkout $(deprecationCommit.hash)
+            displayName: Checkout back to branch that ran the pipeline
 
       - bash: node common/scripts/install-run-rush.js audit
         displayName: rush audit
