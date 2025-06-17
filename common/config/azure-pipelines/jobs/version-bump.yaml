@@ -27,10 +27,6 @@ parameters:
       - patch
       - releaseCandidate
 
-variables:
-  - name: MYGITHUBTOKEN
-  - name: testVar
-    value: "test no"
 
 trigger: none
 pr: none
@@ -182,8 +178,8 @@ jobs:
               git commit -m "add deprecation dates using custom ESLint rule"
               relBranchName="release/"$(Build.SourceBranchName)
               echo "release branch name is $relBranchName"
-              echo "env variable is $(testVar)"
-              git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork HEAD
+              echo "env variable is $(TESTVAR)"
+              git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork HEAD:$relBranchName
               # Get the SHA-1 hash of deprecation changes commit to apply it later on master
               deprecationDateCommitHash=$(git log -1 --format=%H)
               echo "##vso[task.setvariable variable=hash;isOutput=true]$deprecationDateCommitHash"
