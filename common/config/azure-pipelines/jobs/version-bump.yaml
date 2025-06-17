@@ -175,7 +175,10 @@ jobs:
 
           - bash: |
               git commit -m "add deprecation dates using custom ESLint rule"
-              git push origin HEAD:$(Build.SourceBranch)
+              relBranchName="release/"$(Build.SourceBranchName)
+              echo "release branch name is $relBranchName"
+              echo "env variable is $(testVar)"
+              git push https://$(GITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $relBranchName
               # Get the SHA-1 hash of deprecation changes commit to apply it later on master
               deprecationDateCommitHash=$(git log -1 --format=%H)
               echo "##vso[task.setvariable variable=hash;isOutput=true]$deprecationDateCommitHash"
