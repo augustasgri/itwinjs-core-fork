@@ -27,6 +27,11 @@ parameters:
       - patch
       - releaseCandidate
 
+variables:
+  - name: GITHUBTOKEN
+  - name: testVar
+    value: "test no"
+
 trigger: none
 pr: none
 # schedules:
