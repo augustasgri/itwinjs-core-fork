@@ -27,8 +27,8 @@ parameters:
       - patch
       - releaseCandidate
 
-# trigger: none
-# pr: none
+trigger: none
+pr: none
 # schedules:
 #   - cron: "0 5 * * *"
 #     displayName: Daily midnight build
