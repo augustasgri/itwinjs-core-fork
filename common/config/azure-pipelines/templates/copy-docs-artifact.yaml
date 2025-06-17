@@ -2,14 +2,14 @@
 parameters:
   - name: workingDir
     type: string
-    default: $(Pipeline.Workspace)/itwinjs-core
+    default: $(Pipeline.Workspace)/itwinjs-core-fork
   - name: stagingDir
     type: string
     default: $(System.ArtifactsDirectory)/staging/
 
   - name: projectId
     type: string
-    default: 2c48216e-e72f-48b4-a4eb-40ff1c04e8e4
+    default: 00000000-0000-0000-0000-000000000000
   - name: pipelineId
     type: string
   - name: artifactName

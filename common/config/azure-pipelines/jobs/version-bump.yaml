@@ -20,21 +20,21 @@ parameters:
   - name: BumpType
     displayName: Version Bump Type
     type: string
-    default: "nightly"
+    default: "minor"
     values:
       - nightly
       - minor
       - patch
       - releaseCandidate
 
-trigger: none
-pr: none
-schedules:
-  - cron: "0 5 * * *"
-    displayName: Daily midnight build
-    branches:
-      include:
-        - master
+# trigger: none
+# pr: none
+# schedules:
+#   - cron: "0 5 * * *"
+#     displayName: Daily midnight build
+#     branches:
+#       include:
+#         - master
 
 pool:
   vmImage: ubuntu-latest
@@ -132,7 +132,7 @@ jobs:
           fi
         displayName: Update 'gather-docs.yaml' and commit to release branch
 
-      - bash: git push --set-upstream https://$(GITHUBTOKEN)@github.com/iTwin/itwinjs-core $(getBranchName.releaseBranchName) -q
+      - bash: git push --set-upstream origin $(getBranchName.releaseBranchName) -q
         displayName: Publish the release branch
 
   - job: Bump
@@ -305,11 +305,11 @@ jobs:
         : - bash: 'git tag -a release/$(getVersion.version) -m "v$(getVersion.version)"'
             displayName: Create git tag
 
-      - bash: "git push --follow-tags https://$(GITHUBTOKEN)@github.com/iTwin/itwinjs-core $(releaseBranchName)"
+      - bash: "git push --follow-tags origin $(releaseBranchName)"
         displayName: Push version bump for release candidate
         condition: eq('${{ parameters.BumpType }}', 'releaseCandidate')
 
-      - bash: "git push --follow-tags https://$(GITHUBTOKEN)@github.com/iTwin/itwinjs-core HEAD:$(Build.SourceBranch)"
+      - bash: "git push --follow-tags origin HEAD:$(Build.SourceBranch)"
         displayName: Push version bump for non-release candidate
         condition: ne('${{ parameters.BumpType }}', 'releaseCandidate')
 
@@ -381,5 +381,5 @@ jobs:
           git status
         displayName: Get version and committing
 
-      - bash: git push https://$(GITHUBTOKEN)@github.com/iTwin/itwinjs-core $(Build.SourceBranchName) -q
+      - bash: git push origin $(Build.SourceBranchName) -q
         displayName: "Push version bump"

@@ -4,7 +4,7 @@
 parameters:
   - name: workingDir
     type: string
-    default: $(Pipeline.Workspace)/itwinjs-core
+    default: $(Pipeline.Workspace)/itwinjs-core-fork
   - name: stagingDir
     type: string
     default: $(System.ArtifactsDirectory)/staging/
@@ -38,7 +38,7 @@ steps:
     parameters:
       workingDir: ${{ parameters.workingDir }}
       stagingDir: ${{ parameters.stagingDir }}
-      pipelineId: 8594 # iTwin AppUI/AppUI Docs CI
+      pipelineId: 0000 # iTwin AppUI/AppUI Docs CI
       artifactName: AppUI Docs
       buildTag: hasDocs
       useCurrentDocsArtifact: ${{ parameters.useCurrentAppUIDocsArtifact }}
@@ -48,7 +48,7 @@ steps:
     parameters:
       workingDir: ${{ parameters.workingDir }}
       stagingDir: ${{ parameters.stagingDir }}
-      pipelineId: 6075 # BIS/Generate-Schema-Markdown-(GitHub)
+      pipelineId: 0000 # BIS/Generate-Schema-Markdown-(GitHub)
       artifactName: Bis Docs
       useCurrentDocsArtifact: ${{ parameters.useCurrentBisDocsArtifact }}
       stagingSteps:
@@ -63,7 +63,7 @@ steps:
     parameters:
       workingDir: ${{ parameters.workingDir }}
       stagingDir: ${{ parameters.stagingDir }}
-      pipelineId: 8602 # iTwin Presentation/iTwin Presentation Docs
+      pipelineId: 0000 # iTwin Presentation/iTwin Presentation Docs
       artifactName: Presentation Docs
       buildTag: hasDocs
       useCurrentDocsArtifact: ${{ parameters.useCurrentPresentationDocsArtifact }}
@@ -73,7 +73,7 @@ steps:
     parameters:
       workingDir: ${{ parameters.workingDir }}
       stagingDir: ${{ parameters.stagingDir }}
-      pipelineId: 9056 # iTwin Transformer/Transformer Generate Docs
+      pipelineId: 0000 # iTwin Transformer/Transformer Generate Docs
       artifactName: Transformer Docs
       buildTag: hasDocs
       useCurrentDocsArtifact: ${{ parameters.useCurrentTransformerDocsArtifact }}
@@ -83,7 +83,7 @@ steps:
     parameters:
       workingDir: ${{ parameters.workingDir }}
       stagingDir: ${{ parameters.stagingDir }}
-      pipelineId: 9108 # iTwin.js/clients/iTwin.auth-clients.docs build
+      pipelineId: 0000 # iTwin.js/clients/iTwin.auth-clients.docs build
       artifactName: iTwin-Auth-Clients Docs
       buildTag: hasDocs
       useCurrentDocsArtifact: ${{ parameters.useCurrentAuthClientsDocsArtifact }}
@@ -99,7 +99,7 @@ steps:
     parameters:
       workingDir: ${{ parameters.workingDir }}
       stagingDir: ${{ parameters.stagingDir }}
-      pipelineId: 5669 # iTwin.js/iTwin Connector Frameworks/iTwin.connector-framework
+      pipelineId: 0000 # iTwin.js/iTwin Connector Frameworks/iTwin.connector-framework
       artifactName: Connector-Framework Docs
       buildTag: hasDocs
       useCurrentDocsArtifact: ${{ parameters.useCurrentConnectorFrameworkDocsArtifact }}
@@ -109,7 +109,7 @@ steps:
     displayName: Download Pipeline Artifact - .updated.json
     inputs:
       buildType: specific
-      project: 2c48216e-e72f-48b4-a4eb-40ff1c04e8e4
+      project: 00000000-0000-0000-0000-000000000000
       pipeline: 7436 # iTwin.js/Docs/iTwin.js Docs - YAML
       buildVersionToDownload: latestFromBranch
       branchName: refs/heads/master
