@@ -160,6 +160,8 @@ jobs:
       - bash: |
           git fetch --all
           git checkout --track origin/$(releaseBranchName)
+          echo "Checking if env variables were set:"
+          echo "token is ${GH_TOKEN:0:18}"
         displayName: Checkout to Release Branch in case of RC
         condition: eq('${{ parameters.BumpType }}', 'releaseCandidate')
 
