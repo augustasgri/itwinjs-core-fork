@@ -248,6 +248,8 @@ jobs:
             name: cherryPickMaster
             continueOnError: true
             condition: eq(variables['changesDetected'], 'true')
+            env:
+              GH_TOKEN: $(GH_TOKEN)
 
           - bash: git checkout $(deprecationCommit.hash)
             displayName: Checkout back to branch that ran the pipeline
