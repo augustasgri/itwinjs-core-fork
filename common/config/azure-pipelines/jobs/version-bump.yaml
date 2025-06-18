@@ -155,7 +155,19 @@ jobs:
       - bash: |
           git config --local user.email imodeljs-admin@users.noreply.github.com
           git config --local user.name imodeljs-admin
+<<<<<<< HEAD
         displayName: Setup Git
+=======
+          echo "Checking if env variables were set:"
+          echo "token is ${GH_TOKEN:0:18}"
+          echo "other test var is $(TESTVAR)"
+          echo "other test var with different syntax is ${TESTVAR}"
+          echo "test var but slice ${TESTVAR:0:5}"
+        displayName: Setup Git
+        env:
+          GH_TOKEN: $(GH_TOKEN)
+          TESTVAR: $(TESTVAR)
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
 
       - bash: |
           git fetch --all
@@ -230,16 +242,37 @@ jobs:
                 # Commit and push all changes
                 git add .
                 git commit -m "Add deprecation comment changes with all merge conflicts"
+<<<<<<< HEAD
                 git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName
                 echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
 
                 # Create a PR with new conflict branch
                 gh pr create --title "Merge @deprecation comment changes into master" --body "This PR contains all changes after running lint-deprecation ESLint rule and merging with master. Manual intervention required: solve conflicts in this branch and merge PR into master. This happened because @deprecation comments in master and in release branch could not be merged automatically." --draft
+=======
+                git push --set-upstream https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName
+                echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
+
+                echo "checking remote"
+                git remote -v
+
+                echo "checking remote branches"
+                git branch -a | grep cherry-pick
+
+                git fetch
+
+                # Create a PR with new conflict branch
+                gh pr create --title "Merge @deprecation comment changes into master" --body "This PR contains all changes after running lint-deprecation ESLint rule and merging with master. Manual intervention required: solve conflicts in this branch and merge PR into master. This happened because @deprecation comments in master and in release branch could not be merged automatically." --draft --head $conflictBranchName
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
               fi
             displayName: Perform cherry-pick operation for deprecation changes
             name: cherryPickMaster
             continueOnError: true
             condition: eq(variables['changesDetected'], 'true')
+<<<<<<< HEAD
+=======
+            env:
+              GH_TOKEN: $(GH_TOKEN)
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
 
           - bash: git checkout $(deprecationCommit.hash)
             displayName: Checkout back to branch that ran the pipeline

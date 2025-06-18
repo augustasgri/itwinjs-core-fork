@@ -1,6 +1,10 @@
 {
   "name": "@itwin/editor-frontend",
+<<<<<<< HEAD
   "version": "5.1.0-dev.36",
+=======
+  "version": "5.5.0",
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
   "description": "iTwin.js frontend components",
   "main": "lib/cjs/editor-frontend.js",
   "module": "lib/esm/editor-frontend.js",
@@ -68,4 +72,8 @@
   "dependencies": {
     "@itwin/editor-common": "workspace:*"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)

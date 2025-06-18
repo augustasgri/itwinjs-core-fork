@@ -1,6 +1,10 @@
 {
   "name": "@itwin/ecschema-rpcinterface-common",
+<<<<<<< HEAD
   "version": "5.1.0-dev.36",
+=======
+  "version": "5.5.0",
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
   "description": "Schema RPC Interface common interface",
   "main": "lib/cjs/ecschema-rpc-interface.js",
   "module": "lib/esm/ecschema-rpc-interface.js",
@@ -50,4 +54,8 @@
     "rimraf": "^6.0.1",
     "typescript": "~5.6.2"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)

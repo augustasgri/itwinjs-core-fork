@@ -1,6 +1,10 @@
 {
   "name": "@itwin/certa",
+<<<<<<< HEAD
   "version": "5.1.0-dev.36",
+=======
+  "version": "5.5.0",
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
   "description": "A mocha-based integration test runner",
   "license": "MIT",
   "main": "bin/certa.js",
@@ -67,4 +71,8 @@
       "optional": true
     }
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)

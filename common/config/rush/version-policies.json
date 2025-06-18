@@ -2,7 +2,11 @@
   {
     "policyName": "prerelease-monorepo-lockStep",
     "definitionName": "lockStepVersion",
+<<<<<<< HEAD
     "version": "5.1.0-dev.36",
+=======
+    "version": "5.5.0",
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
     "nextBump": "prerelease"
   }
 ]

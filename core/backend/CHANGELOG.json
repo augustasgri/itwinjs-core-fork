@@ -2,6 +2,87 @@
   "name": "@itwin/core-backend",
   "entries": [
     {
+<<<<<<< HEAD
+=======
+      "version": "5.5.0",
+      "tag": "@itwin/core-backend_v5.5.0",
+      "date": "Wed, 18 Jun 2025 10:23:15 GMT",
+      "comments": {}
+    },
+    {
+      "version": "5.4.0",
+      "tag": "@itwin/core-backend_v5.4.0",
+      "date": "Wed, 18 Jun 2025 08:44:08 GMT",
+      "comments": {}
+    },
+    {
+      "version": "5.3.0",
+      "tag": "@itwin/core-backend_v5.3.0",
+      "date": "Wed, 18 Jun 2025 08:35:44 GMT",
+      "comments": {}
+    },
+    {
+      "version": "5.2.0",
+      "tag": "@itwin/core-backend_v5.2.0",
+      "date": "Wed, 18 Jun 2025 08:22:51 GMT",
+      "comments": {}
+    },
+    {
+      "version": "5.1.0",
+      "tag": "@itwin/core-backend_v5.1.0",
+      "date": "Wed, 18 Jun 2025 07:51:18 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Add Symbols to prevent duplicate instances of package"
+          },
+          {
+            "comment": "Fix applychangeset issue"
+          },
+          {
+            "comment": "Mark iModel edit API as @preview"
+          },
+          {
+            "comment": "Fix regression when using performCheckpoint()"
+          },
+          {
+            "comment": "Add SheetViewDefinition.create, CreateSheetViewDefinitionArgs"
+          },
+          {
+            "comment": "optionally return world CRS from getAvailableCoordinateReferenceSystems"
+          },
+          {
+            "comment": "Refactoring the TextAnnotationGeometry and adding support for frames"
+          },
+          {
+            "comment": "Improve change unifer to handle very large changeset"
+          },
+          {
+            "comment": "Clear iModelDb Caches on abandonChanges"
+          },
+          {
+            "comment": "Thining iModelPlatform API"
+          },
+          {
+            "comment": "Updates iModelDb Error Handling"
+          },
+          {
+            "comment": "Reduce Model and Element Cache Size"
+          },
+          {
+            "comment": "Fix TextStyle.widthFactor multiplying by height instead of width during text layout."
+          },
+          {
+            "comment": "Snapshot/StandaloneDb.createBlank - set ecefLocation and geographicCoordinateSystem if provided"
+          },
+          {
+            "comment": "Add Beta downloadChangeset and downloadChangesets to BriefcaseManager."
+          }
+        ]
+      }
+    },
+    {
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
       "version": "4.11.5",
       "tag": "@itwin/core-backend_v4.11.5",
       "date": "Fri, 06 Jun 2025 13:41:18 GMT",

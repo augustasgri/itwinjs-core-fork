@@ -40,7 +40,11 @@
       "Samples": "sample-showcase",
       "Learning": "learning",
       "API": "reference",
+<<<<<<< HEAD
       "v4.0.0": "changehistory"
+=======
+      "v5.5.0": "changehistory"
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
     },
     "archivedVersions": [
       {

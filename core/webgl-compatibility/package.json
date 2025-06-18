@@ -1,6 +1,10 @@
 {
   "name": "@itwin/webgl-compatibility",
+<<<<<<< HEAD
   "version": "5.1.0-dev.36",
+=======
+  "version": "5.5.0",
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
   "description": "APIs for determining the level of compatibility of a browser+device with the iTwin.js rendering system.",
   "license": "MIT",
   "main": "lib/cjs/webgl-compatibility.js",
@@ -56,4 +60,8 @@
     "typescript": "~5.6.2",
     "webpack": "^5.97.1"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)

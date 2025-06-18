@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 # 4.10.0 Change Notes
 
 Table of contents:
@@ -179,3 +180,27 @@ In addition to [already supported Electron versions](../learning/SupportedPlatfo
 ### @itwin/presentation-common
 
 - All public methods of [PresentationRpcInterface]($presentation-common) have been deprecated. Going forward, RPC interfaces should not be called directly. Public wrappers such as [PresentationManager]($presentation-frontend) should be used instead.
+=======
+# 5.1.0 Change Notes
+
+Table of contents:
+
+- [Electron 36 support](#electron-36-support)
+- [API deprecations](#api-deprecations)
+  - [@itwin/presentation-backend](#itwinpresentation-backend)
+  - [@itwin/presentation-frontend](#itwinpresentation-frontend)
+
+## Electron 36 support
+
+In addition to [already supported Electron versions](../learning/SupportedPlatforms.md#electron), iTwin.js now supports [Electron 36](https://www.electronjs.org/blog/electron-36-0).
+
+## API deprecations
+
+### @itwin/presentation-backend
+
+- The `PresentationManagerProps.schemaContextProvider` property has been deprecated. Starting with `5.0` release, `SchemaContext` is always available on [IModelDb]($core-backend), so this prop is no longer needed. If supplied, it will still be preferred over the iModel's schema context, until the property is removed completely in a future release.
+
+### @itwin/presentation-frontend
+
+- The `PresentationManagerProps.schemaContextProvider` property has been deprecated. Starting with `5.0` release, `SchemaContext` is always available on [IModelConnection]($core-frontend), so this prop is no longer needed. If supplied, it will still be preferred over the iModel's schema context, until the property is removed completely in a future release.
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)

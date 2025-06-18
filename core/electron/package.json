@@ -1,6 +1,10 @@
 {
   "name": "@itwin/core-electron",
+<<<<<<< HEAD
   "version": "5.1.0-dev.36",
+=======
+  "version": "5.5.0",
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
   "description": "iTwin.js ElectronHost and ElectronApp",
   "license": "MIT",
   "engines": {
@@ -71,4 +75,8 @@
     "open": "^7.0.0",
     "username": "^7.0.0"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)

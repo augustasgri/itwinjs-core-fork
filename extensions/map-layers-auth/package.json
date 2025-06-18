@@ -1,6 +1,10 @@
 {
   "name": "@itwin/map-layers-auth",
+<<<<<<< HEAD
   "version": "5.1.0-dev.36",
+=======
+  "version": "5.5.0",
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
   "description": "Extension that adds a Map Layers Widget",
   "main": "lib/cjs/map-layers-auth.js",
   "module": "lib/esm/map-layers-auth.js",
@@ -90,4 +94,8 @@
       "mochaFile=lib/test/junit_results.xml"
     ]
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)

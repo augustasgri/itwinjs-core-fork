@@ -1,6 +1,10 @@
 {
   "name": "@itwin/physical-material-backend",
+<<<<<<< HEAD
   "version": "5.1.0-dev.36",
+=======
+  "version": "5.5.0",
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
   "main": "lib/cjs/physical-material-backend.js",
   "module": "lib/esm/physical-material-backend.js",
   "typings": "lib/cjs/physical-material-backend",
@@ -70,4 +74,8 @@
   "nyc": {
     "extends": "./node_modules/@itwin/build-tools/.nycrc"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7b7e6332d (add deprecation dates using custom ESLint rule)
