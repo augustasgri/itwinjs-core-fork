@@ -173,10 +173,10 @@ jobs:
 
           - bash: |
               if [ -n "$(git status --porcelain)" ]; then
-                echo "##vso[task.setvariable variable=changesDetected;isOutput=true]true"
+                echo "##vso[task.setvariable variable=changesDetected]true"
                 echo "Changes detected."
               else
-                echo "##vso[task.setvariable variable=changesDetected;isOutput=true]false"
+                echo "##vso[task.setvariable variable=changesDetected]false"
                 echo "No changes detected."
               fi
             displayName: "Check if any changes happened"
@@ -184,7 +184,7 @@ jobs:
 
           - bash: git add .
             displayName: git add .
-            condition: eq(steps.checkChanges.outputs.changesDetected, 'true')
+            condition: eq(variables['changesDetected'], 'true')
 
           - bash: |
               git commit -m "add deprecation dates using custom ESLint rule"
@@ -197,13 +197,13 @@ jobs:
               echo "##vso[task.setvariable variable=hash;isOutput=true]$deprecationDateCommitHash"
             displayName: Commit deprecation date changes to release branch and save SHA-1 hash of the commit
             name: deprecationCommit
-            condition: eq(steps.checkChanges.outputs.changesDetected, 'true')
+            condition: eq(variables['changesDetected'], 'true')
 
           - bash: |
               git fetch --depth=1
               git checkout origin/master
             displayName: Checkout to up-to-date master
-            condition: eq(steps.checkChanges.outputs.changesDetected, 'true')
+            condition: eq(variables['changesDetected'], 'true')
 
           - bash: |
               commitHash=$(deprecationCommit.hash)
@@ -240,11 +240,11 @@ jobs:
             displayName: Perform cherry-pick operation for deprecation changes
             name: cherryPickMaster
             continueOnError: true
-            condition: eq(steps.checkChanges.outputs.changesDetected, 'true')
+            condition: eq(variables['changesDetected'], 'true')
 
           - bash: git checkout $(deprecationCommit.hash)
             displayName: Checkout back to branch that ran the pipeline
-            condition: eq(steps.checkChanges.outputs.changesDetected, 'true')
+            condition: eq(variables['changesDetected'], 'true')
 
       - bash: node common/scripts/install-run-rush.js audit
         displayName: rush audit
