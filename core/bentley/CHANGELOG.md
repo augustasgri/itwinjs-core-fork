@@ -1,13 +1,6 @@
 # Change Log - @itwin/core-bentley
 
-This log was last generated on Wed, 18 Jun 2025 07:16:42 GMT and should not be manually modified.
-
-## 5.1.0
-Wed, 18 Jun 2025 07:16:42 GMT
-
-### Updates
-
-- Add compareArrays for ordered comparison of arrays.
+This log was last generated on Fri, 06 Jun 2025 13:44:02 GMT and should not be manually modified.
 
 ## 4.11.5
 Fri, 06 Jun 2025 13:41:18 GMT

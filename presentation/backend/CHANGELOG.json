@@ -2,24 +2,6 @@
   "name": "@itwin/presentation-backend",
   "entries": [
     {
-      "version": "5.1.0",
-      "tag": "@itwin/presentation-backend_v5.1.0",
-      "date": "Wed, 18 Jun 2025 07:16:42 GMT",
-      "comments": {
-        "none": [
-          {
-            "comment": "Add Symbols to prevent duplicate instances of package"
-          },
-          {
-            "comment": "Fix `getDisplayLabelDefinitions` implementation not taking into account different formats and casings of full class name."
-          },
-          {
-            "comment": "Deprecate `PresentationManagerProps.schemaContextProvider`."
-          }
-        ]
-      }
-    },
-    {
       "version": "4.11.5",
       "tag": "@itwin/presentation-backend_v4.11.5",
       "date": "Fri, 06 Jun 2025 13:41:18 GMT",

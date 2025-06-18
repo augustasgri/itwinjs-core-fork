@@ -2,42 +2,6 @@
   "name": "@itwin/core-frontend",
   "entries": [
     {
-      "version": "5.1.0",
-      "tag": "@itwin/core-frontend_v5.1.0",
-      "date": "Wed, 18 Jun 2025 07:16:42 GMT",
-      "comments": {
-        "none": [
-          {
-            "comment": "Made QuadIdProps public"
-          },
-          {
-            "comment": "Fix issue with WMTS server using ResourceURL"
-          },
-          {
-            "comment": "Added new `MapLayerSessionManager` API.  Minor additions to `MapCartoRectangle` and `QuadId` classes."
-          },
-          {
-            "comment": "Add `@itwin/ecschema-metadata`, `@itwin/ecschema-rpcinterface-common` peer dependencies. Make iModel-specific `SchemaContext` available on `IModelConnection` through the new `schemaContext` getter."
-          },
-          {
-            "comment": "Deprecate `quantityType` getters for subclasses of `FormattedQuantityDescription` and allow passing in `kindOfQuantityName` to constructor"
-          },
-          {
-            "comment": "Add `formatsProvider` property to `IModelApp` and `IModelAppOptions`, new `QuantityFormatter` helper methods to help consumers supply their own format specifications for formatting numeric values."
-          },
-          {
-            "comment": "Add Viewport.backgroundMapTileTreeReference"
-          },
-          {
-            "comment": "Added TileAdmin.Options.disablePolyfaceDecimation."
-          },
-          {
-            "comment": "HitDetail and Viewport.readPixels include contour line information."
-          }
-        ]
-      }
-    },
-    {
       "version": "4.11.5",
       "tag": "@itwin/core-frontend_v4.11.5",
       "date": "Fri, 06 Jun 2025 13:41:18 GMT",
