@@ -155,13 +155,13 @@ jobs:
       - bash: |
           git config --local user.email imodeljs-admin@users.noreply.github.com
           git config --local user.name imodeljs-admin
+          echo "Checking if env variables were set:"
+          echo "token is ${GH_TOKEN:0:18}"
         displayName: Setup Git
 
       - bash: |
           git fetch --all
           git checkout --track origin/$(releaseBranchName)
-          echo "Checking if env variables were set:"
-          echo "token is ${GH_TOKEN:0:18}"
         displayName: Checkout to Release Branch in case of RC
         condition: eq('${{ parameters.BumpType }}', 'releaseCandidate')
 
