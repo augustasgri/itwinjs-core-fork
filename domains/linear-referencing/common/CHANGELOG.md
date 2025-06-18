@@ -1,6 +1,11 @@
 # Change Log - @itwin/linear-referencing-common
 
-This log was last generated on Fri, 06 Jun 2025 13:44:02 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Jun 2025 06:55:07 GMT and should not be manually modified.
+
+## 5.1.0
+Wed, 18 Jun 2025 06:55:07 GMT
+
+_Version update only_
 
 ## 4.11.5
 Fri, 06 Jun 2025 13:41:18 GMT

@@ -1,6 +1,15 @@
 # Change Log - @itwin/ecschema-metadata
 
-This log was last generated on Fri, 06 Jun 2025 13:44:02 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Jun 2025 06:55:07 GMT and should not be manually modified.
+
+## 5.1.0
+Wed, 18 Jun 2025 06:55:07 GMT
+
+### Updates
+
+- Both buildPropertyCache and buildPropertyCacheSync, take no parameters and build the cache in house and return the cache map. Additionally, mergeProperties is now removed.
+- Handle SI and METRIC unit systems as one unit system in SchemaFormatsProvider
+- Gracefully handle errors, including rpc, when retrieving schema items in `SchemaFormatsProvider`
 
 ## 4.11.5
 Fri, 06 Jun 2025 13:41:18 GMT

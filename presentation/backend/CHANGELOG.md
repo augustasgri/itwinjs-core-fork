@@ -1,6 +1,15 @@
 # Change Log - @itwin/presentation-backend
 
-This log was last generated on Fri, 06 Jun 2025 13:44:02 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Jun 2025 06:55:07 GMT and should not be manually modified.
+
+## 5.1.0
+Wed, 18 Jun 2025 06:55:07 GMT
+
+### Updates
+
+- Add Symbols to prevent duplicate instances of package
+- Fix `getDisplayLabelDefinitions` implementation not taking into account different formats and casings of full class name.
+- Deprecate `PresentationManagerProps.schemaContextProvider`.
 
 ## 4.11.5
 Fri, 06 Jun 2025 13:41:18 GMT
