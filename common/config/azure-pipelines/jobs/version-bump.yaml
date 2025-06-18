@@ -157,7 +157,13 @@ jobs:
           git config --local user.name imodeljs-admin
           echo "Checking if env variables were set:"
           echo "token is ${GH_TOKEN:0:18}"
+          echo "other test var is $(TESTVAR)"
+          echo "other test var with different syntax is ${TESTVAR}"
+          echo "test var but slice ${TESTVAR:0:5}"
         displayName: Setup Git
+        env:
+          GH_TOKEN: $(GH_TOKEN)
+          TESTVAR: $(TESTVAR)
 
       - bash: |
           git fetch --all
