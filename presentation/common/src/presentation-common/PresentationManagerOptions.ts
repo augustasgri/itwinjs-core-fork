@@ -179,7 +179,7 @@ export interface DistinctValuesRequestOptions<TIModel, TDescriptor, TKeySet, TRu
 /**
  * Request type for element properties requests
  * @public
- * @deprecated in 4.x - will not be removed until 2026-06-17. Should never be deprecated. Use [[SingleElementPropertiesRequestOptions]] or [[MultiElementPropertiesRequestOptions]] directly.
+ * @deprecated in 4.x. Should never be deprecated. Use [[SingleElementPropertiesRequestOptions]] or [[MultiElementPropertiesRequestOptions]] directly.
  */
 export type ElementPropertiesRequestOptions<TIModel, TParsedContent = ElementProperties> =
   | SingleElementPropertiesRequestOptions<TIModel>
