@@ -1,6 +1,11 @@
 # Change Log - @itwin/linear-referencing-backend
 
-This log was last generated on Wed, 18 Jun 2025 06:55:07 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Jun 2025 08:12:39 GMT and should not be manually modified.
+
+## 5.2.0
+Wed, 18 Jun 2025 08:12:39 GMT
+
+_Version update only_
 
 ## 5.1.0
 Wed, 18 Jun 2025 06:55:07 GMT
