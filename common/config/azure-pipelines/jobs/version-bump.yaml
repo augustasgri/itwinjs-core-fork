@@ -241,8 +241,16 @@ jobs:
                 git push --set-upstream https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName
                 echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
 
+                echo "checking remote"
+                git remote -v
+
+                echo "checking remote branches"
+                git branch -a | grep cherry-pick
+
+                git fetch
+
                 # Create a PR with new conflict branch
-                gh pr create --title "Merge @deprecation comment changes into master" --body "This PR contains all changes after running lint-deprecation ESLint rule and merging with master. Manual intervention required: solve conflicts in this branch and merge PR into master. This happened because @deprecation comments in master and in release branch could not be merged automatically." --draft
+                gh pr create --title "Merge @deprecation comment changes into master" --body "This PR contains all changes after running lint-deprecation ESLint rule and merging with master. Manual intervention required: solve conflicts in this branch and merge PR into master. This happened because @deprecation comments in master and in release branch could not be merged automatically." --draft --head $conflictBranchName
               fi
             displayName: Perform cherry-pick operation for deprecation changes
             name: cherryPickMaster
