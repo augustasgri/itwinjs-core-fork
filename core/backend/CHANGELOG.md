@@ -1,6 +1,27 @@
 # Change Log - @itwin/core-backend
 
-This log was last generated on Fri, 06 Jun 2025 13:44:02 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Jun 2025 07:16:42 GMT and should not be manually modified.
+
+## 5.1.0
+Wed, 18 Jun 2025 07:16:42 GMT
+
+### Updates
+
+- Add Symbols to prevent duplicate instances of package
+- Fix applychangeset issue
+- Mark iModel edit API as @preview
+- Fix regression when using performCheckpoint()
+- Add SheetViewDefinition.create, CreateSheetViewDefinitionArgs
+- optionally return world CRS from getAvailableCoordinateReferenceSystems
+- Refactoring the TextAnnotationGeometry and adding support for frames
+- Improve change unifer to handle very large changeset
+- Clear iModelDb Caches on abandonChanges
+- Thining iModelPlatform API
+- Updates iModelDb Error Handling
+- Reduce Model and Element Cache Size
+- Fix TextStyle.widthFactor multiplying by height instead of width during text layout.
+- Snapshot/StandaloneDb.createBlank - set ecefLocation and geographicCoordinateSystem if provided
+- Add Beta downloadChangeset and downloadChangesets to BriefcaseManager.
 
 ## 4.11.5
 Fri, 06 Jun 2025 13:41:18 GMT
