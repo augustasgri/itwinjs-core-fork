@@ -155,15 +155,7 @@ jobs:
       - bash: |
           git config --local user.email imodeljs-admin@users.noreply.github.com
           git config --local user.name imodeljs-admin
-          echo "Checking if env variables were set:"
-          echo "token is ${GH_TOKEN:0:18}"
-          echo "other test var is $(TESTVAR)"
-          echo "other test var with different syntax is ${TESTVAR}"
-          echo "test var but slice ${TESTVAR:0:5}"
         displayName: Setup Git
-        env:
-          GH_TOKEN: $(GH_TOKEN)
-          TESTVAR: $(TESTVAR)
 
       - bash: |
           git fetch --all
@@ -181,10 +173,9 @@ jobs:
           - bash: |
               if [ -n "$(git status --porcelain)" ]; then
                 echo "##vso[task.setvariable variable=changesDetected]true"
-                echo "Changes detected."
               else
+                echo "No changes to @deprecated comments were made. Skipping deprecation comment handling."
                 echo "##vso[task.setvariable variable=changesDetected]false"
-                echo "No changes detected."
               fi
             displayName: "Check if any changes happened"
             name: checkChanges
@@ -196,9 +187,8 @@ jobs:
           - bash: |
               git commit -m "add deprecation dates using custom ESLint rule"
               relBranchName="release/"$(Build.SourceBranchName)
-              echo "release branch name is $relBranchName"
-              echo "env variable is $(TESTVAR)"
               git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork HEAD:$relBranchName
+
               # Get the SHA-1 hash of deprecation changes commit to apply it later on master
               deprecationDateCommitHash=$(git log -1 --format=%H)
               echo "##vso[task.setvariable variable=hash;isOutput=true]$deprecationDateCommitHash"
@@ -216,17 +206,16 @@ jobs:
               commitHash=$(deprecationCommit.hash)
               echo "Attempting to cherry-pick commit: $commitHash"
               if git cherry-pick $commitHash; then
-                # Happy path when no merge conflicts are encountered with master
                 echo "Successfully applied deprecation comment updates to master"
                 git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork HEAD:master
               else
-                # Merge conflicts prevent us from committing changes to master
-                # We create a branch with conflicting changes. Then it is expected
-                # for human to pull the branch, solve conflicts and merge changes
+                # Merge conflicts prevent us from committing changes to master directly.
+                # We create a branch with conflicting changes and set-up a PR.
+                # It is then expected that developer manually resolves merge conflicts and merges the PR
                 echo "Cherry-pick operation on master failed (most likely merge conflicts). Manual intervention required"
                 git cherry-pick --abort
 
-                # Create and checkout to manual conflict handling branch
+                # Create and checkout to conflict handling branch
                 conflictBranchName="cherry-pick-conflict-$(date +%y%m%d%H%m%s)"
                 echo "Creating new branch '$conflictBranchName' for manual resolution"
                 git checkout -b $conflictBranchName
@@ -240,13 +229,6 @@ jobs:
                 git commit -m "Add deprecation comment changes with all merge conflicts"
                 git push --set-upstream https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName
                 echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
-
-                echo "checking remote"
-                git remote -v
-
-                echo "checking remote branches"
-                git branch -a | grep cherry-pick
-
                 git fetch
 
                 # Create a PR with new conflict branch
