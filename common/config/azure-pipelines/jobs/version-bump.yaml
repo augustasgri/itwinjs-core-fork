@@ -205,7 +205,11 @@ jobs:
           - bash: |
               commitHash=$(deprecationCommit.hash)
               echo "Attempting to cherry-pick commit: $commitHash"
+<<<<<<< HEAD
               if git cherry-pick $commitHash; then
+=======
+              if git cherry-pick -ff $commitHash; then
+>>>>>>> 110b264c5 (add deprecation dates using custom ESLint rule)
                 echo "Successfully applied deprecation comment updates to master"
                 git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork HEAD:master
               else
