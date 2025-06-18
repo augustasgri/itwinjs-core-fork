@@ -1,6 +1,11 @@
 # Change Log - @itwin/presentation-frontend
 
-This log was last generated on Wed, 18 Jun 2025 10:23:15 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Jun 2025 10:48:28 GMT and should not be manually modified.
+
+## 5.6.0
+Wed, 18 Jun 2025 10:48:28 GMT
+
+_Version update only_
 
 ## 5.5.0
 Wed, 18 Jun 2025 10:23:15 GMT
