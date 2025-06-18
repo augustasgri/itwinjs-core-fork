@@ -238,7 +238,7 @@ jobs:
                 # Commit and push all changes
                 git add .
                 git commit -m "Add deprecation comment changes with all merge conflicts"
-                git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName
+                git push --set-upstream https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName
                 echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
 
                 # Create a PR with new conflict branch
