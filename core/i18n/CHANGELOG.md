@@ -1,6 +1,11 @@
 # Change Log - @itwin/core-i18n
 
-This log was last generated on Wed, 25 Jun 2025 09:41:38 GMT and should not be manually modified.
+This log was last generated on Wed, 25 Jun 2025 11:10:35 GMT and should not be manually modified.
+
+## 5.8.1
+Wed, 25 Jun 2025 11:09:16 GMT
+
+_Version update only_
 
 ## 5.8.0
 Wed, 25 Jun 2025 09:41:38 GMT
