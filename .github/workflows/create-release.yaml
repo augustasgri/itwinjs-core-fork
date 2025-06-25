@@ -24,4 +24,4 @@ jobs:
       - name: Create release
         run: python common/scripts/create_release.py ${{ github.ref_name }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.FORK_GH_TOKEN }}

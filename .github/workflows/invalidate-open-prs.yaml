@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.IMJS_ADMIN_GH_TOKEN }}
+          token: ${{ secrets.FORK_GH_TOKEN }}
           ref: ${{ github.ref }} # checkouts the branch that triggered the workflow
           fetch-depth: 0
       - name: Set Git Config
@@ -31,4 +31,4 @@ jobs:
           npm install dotenv
           node ./.github/workflows/automation-scripts/invalidate-status-checks.mjs
         env:
-          GITHUB_TOKEN: ${{ secrets.IMJS_ADMIN_GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.FORK_GH_TOKEN }}

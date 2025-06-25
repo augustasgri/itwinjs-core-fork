@@ -18,7 +18,7 @@ on:
     - '.github/workflows/**'
 
 env:
-  token: ${{ secrets.GITHUBTOKEN }}
+  token: ${{ secrets.FORK_GH_TOKEN }}
   debug: ${{ github.event.inputs.debug  }}
 
 jobs:

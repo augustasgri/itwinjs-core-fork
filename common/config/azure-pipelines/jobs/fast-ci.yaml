@@ -89,7 +89,7 @@ jobs:
             currentSHA=$(node -e "const data = require('./pr_view.json'); console.log(data.headRefOid)")
             node -e "const data = require('./pr_view.json'); console.log(data.body)" >> body.txt
 
-            NativeUrl=$(grep -E '^imodel-native(-internal)?: https://github\.com/iTwin/imodel-native(-internal)?/pull/*' body.txt)
+            NativeUrl=$(grep -E '^imodel-native(-internal)?: https://github\.com/augustasgri/imodel-native(-internal)?/pull/*' body.txt)
           else
             echo 'This run was not triggered by a Pull request.'
             echo 'If you have a PR for this branch and wish to use a linked PR please comment in your PR "/azp run iTwin.js" to trigger the pipeline'

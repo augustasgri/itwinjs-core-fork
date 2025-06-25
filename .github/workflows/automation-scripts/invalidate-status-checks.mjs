@@ -8,12 +8,12 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 const octokit = new Octokit({
-  auth: `${process.env.GITHUB_TOKEN}`
+  auth: `${process.env.FORK_GH_TOKEN}`
 });
 
 let pull_requests = await octokit.request('GET /repos/{owner}/{repo}/pulls', {
-  owner: 'iTwin',
-  repo: 'itwinjs-core',
+  owner: 'augustasgri',
+  repo: 'itwinjs-core-fork',
   headers: {
     'X-GitHub-Api-Version': '2022-11-28'
   }
@@ -24,8 +24,8 @@ for (let i = 0; i < pull_requests.data.length; i++) {
 
   if (!pull_requests.data[i].draft && pull_requests.data[i].base.ref === 'master') {
     await octokit.request('POST /repos/{owner}/{repo}/statuses/{sha}', {
-      owner: 'iTwin',
-      repo: 'itwinjs-core',
+      owner: 'augustasgri',
+      repo: 'itwinjs-core-fork',
       sha: `${pr_sha}`,
       state: 'failure',
       description: '@bentley/imodeljs-native may be out of date with master, please merge',

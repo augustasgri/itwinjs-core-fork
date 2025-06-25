@@ -74,7 +74,7 @@ jobs:
       - uses: LouisBrunner/checks-action@v2.0.0   # See https://github.com/marketplace/actions/github-checks
         if: steps.changed-files-specific.outputs.only_modified == 'true'
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.FORK_GH_TOKEN }}
           name: extract-api
           conclusion: success
 
@@ -84,6 +84,6 @@ jobs:
       # - uses: LouisBrunner/checks-action@v1.3.0
       #   if: steps.changed-files-specific.outputs.only_modified == 'true'
       #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     token: ${{ secrets.FORK_GH_TOKEN }}
       #     name: <name-of-any-status-check-to-simulate>
       #     conclusion: success

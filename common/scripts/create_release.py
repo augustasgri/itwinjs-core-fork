@@ -30,7 +30,7 @@ def replace_image_links(file_path):
         content = content.replace('\\', '/')
 
         # Replace the "./assets" part of the image links with the correct URL
-        updated_content = re.sub(r'!\[(.*?)\]\(\./assets(.*?)\)', r'![\1](https://github.com/iTwin/itwinjs-core/raw/master/docs/changehistory/assets\2)', content)
+        updated_content = re.sub(r'!\[(.*?)\]\(\./assets(.*?)\)', r'![\1](https://github.com/augustasgri/itwinjs-core-fork/raw/master/docs/changehistory/assets\2)', content)
 
         # Move the file cursor to the beginning and truncate the file
         f.seek(0)
@@ -136,7 +136,7 @@ def createRelease(tag):
     for commit in commits[::-1]:
       f.write("- {0}\n".format(getCommitMessage(commit)))
     f.write("\n")
-    f.write("**Full changelog:** [{0}...{1}](https://github.com/iTwin/itwinjs-core/compare/{2}...{3})\n".format(previousVer, currentVer, previousTag, tag))
+    f.write("**Full changelog:** [{0}...{1}](https://github.com/augustasgri/itwinjs-core-fork/compare/{2}...{3})\n".format(previousVer, currentVer, previousTag, tag))
     f.close()
 
   else:
