@@ -1,6 +1,31 @@
 # Change Log - @itwin/editor-frontend
 
-This log was last generated on Wed, 25 Jun 2025 11:34:48 GMT and should not be manually modified.
+This log was last generated on Wed, 25 Jun 2025 14:13:58 GMT and should not be manually modified.
+
+## 5.13.0
+Wed, 25 Jun 2025 14:12:30 GMT
+
+_Version update only_
+
+## 5.12.0
+Wed, 25 Jun 2025 13:57:40 GMT
+
+_Version update only_
+
+## 5.11.0
+Wed, 25 Jun 2025 13:45:17 GMT
+
+_Version update only_
+
+## 5.10.0
+Wed, 25 Jun 2025 13:01:26 GMT
+
+_Version update only_
+
+## 5.9.0
+Wed, 25 Jun 2025 12:43:09 GMT
+
+_Version update only_
 
 ## 5.8.2
 Wed, 25 Jun 2025 11:33:28 GMT
