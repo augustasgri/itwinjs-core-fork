@@ -197,7 +197,7 @@ jobs:
             condition: eq(variables['changesDetected'], 'true')
 
           - bash: |
-              git fetch --depth=1
+              git fetch
               git checkout origin/master
             displayName: Checkout to up-to-date master
             condition: eq(variables['changesDetected'], 'true')
