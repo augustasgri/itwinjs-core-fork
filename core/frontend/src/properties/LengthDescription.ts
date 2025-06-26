@@ -27,7 +27,11 @@ export class LengthDescription extends FormattedQuantityDescription {
 
   public get formatterQuantityType(): QuantityType { return QuantityType.Length; }
   /**
+<<<<<<< HEAD
    * @deprecated in 5.0. Shouldn't be removed until 2028-06-11. Use the `kindOfQuantityName` property instead.
+=======
+   * @deprecated in 5.0 - will not be removed until 2026-06-26. Must be removed until 2027-06-17. Use the `kindOfQuantityName` property instead foo bar bar bar.
+>>>>>>> 57e05bd9d6 (add deprecation dates using custom ESLint rule)
    */
   public get quantityType(): string { return "Length"; }
 
