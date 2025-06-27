@@ -1,6 +1,11 @@
 # Change Log - @itwin/core-quantity
 
-This log was last generated on Fri, 27 Jun 2025 07:44:51 GMT and should not be manually modified.
+This log was last generated on Fri, 27 Jun 2025 07:54:28 GMT and should not be manually modified.
+
+## 5.14.6
+Fri, 27 Jun 2025 07:54:28 GMT
+
+_Version update only_
 
 ## 5.14.5
 Fri, 27 Jun 2025 07:44:51 GMT
