@@ -23,11 +23,7 @@ module.exports = [
         "warn",
         {
           removeOldDates: true,
-<<<<<<< HEAD
-          addVersion: "5.14.3"
-=======
           addVersion: "5.14.6"
->>>>>>> d6f0fbea9 (add deprecation dates using custom ESLint rule)
         }
       ]
     }
