@@ -112,6 +112,6 @@ steps:
       project: 00000000-0000-0000-0000-000000000000
       pipeline: 7436 # iTwin.js/Docs/iTwin.js Docs - YAML
       buildVersionToDownload: latestFromBranch
-      branchName: refs/heads/release/12.0.x
+      branchName: refs/heads/release/13.2.x
       artifactName: .updated.json
       targetPath: ${{ parameters.stagingDir }}/config/
