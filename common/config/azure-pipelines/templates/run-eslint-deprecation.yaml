@@ -36,6 +36,7 @@ steps:
     condition: eq(variables['changesDetected'], 'true')
 
   - bash: |
+      git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork master:master
       git checkout origin/master
     displayName: Checkout to master
     condition: eq(variables['changesDetected'], 'true')
