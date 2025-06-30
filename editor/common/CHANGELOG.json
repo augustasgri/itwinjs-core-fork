@@ -2,6 +2,12 @@
   "name": "@itwin/editor-common",
   "entries": [
     {
+      "version": "5.15.3",
+      "tag": "@itwin/editor-common_v5.15.3",
+      "date": "Mon, 30 Jun 2025 07:24:48 GMT",
+      "comments": {}
+    },
+    {
       "version": "5.15.2",
       "tag": "@itwin/editor-common_v5.15.2",
       "date": "Mon, 30 Jun 2025 06:57:46 GMT",
