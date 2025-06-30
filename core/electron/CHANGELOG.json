@@ -2,6 +2,12 @@
   "name": "@itwin/core-electron",
   "entries": [
     {
+      "version": "5.17.0",
+      "tag": "@itwin/core-electron_v5.17.0",
+      "date": "Mon, 30 Jun 2025 07:53:40 GMT",
+      "comments": {}
+    },
+    {
       "version": "5.16.0",
       "tag": "@itwin/core-electron_v5.16.0",
       "date": "Mon, 30 Jun 2025 07:42:13 GMT",
