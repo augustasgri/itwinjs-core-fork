@@ -44,7 +44,6 @@ steps:
         git checkout -b $conflictBranchName
 
         # Cherry-pick changes onto conflict handling branch
-        commitHash=$(deprecationCommit.hash)
         git cherry-pick $commitHash
 
         # Commit and push all changes
@@ -52,7 +51,7 @@ steps:
         git commit -m "Add deprecation rule changes with all merge conflicts"
         git push --set-upstream https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName
         echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
-        git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName:$conflictBranchName
+        # git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName:$conflictBranchName
 
         # Create a PR with new conflict branch
         gh pr create --title "Merge deprecation comment changes into master" --body "This PR contains all changes after running lint-deprecation ESLint rule and merging with master. Manual intervention required: solve conflicts in this branch and merge PR into master. This happened because deprecation comments in master and in release branch could not be merged automatically." --draft --head $conflictBranchName
