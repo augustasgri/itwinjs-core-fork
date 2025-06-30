@@ -31,7 +31,7 @@ export class LockConflict extends IModelError {
 }
 
 /** The state of a lock. See [Acquiring locks on elements.]($docs/learning/backend/ConcurrencyControl.md#acquiring-locks-on-elements).
- * @deprecated Use [LockState]($common)
+ * @deprecated in 18.0.0. Use [LockState]($common)
  * @public
  */
 export enum LockState {
