@@ -1,6 +1,11 @@
 # Change Log - @itwin/frontend-tiles
 
-This log was last generated on Mon, 30 Jun 2025 07:57:47 GMT and should not be manually modified.
+This log was last generated on Mon, 30 Jun 2025 08:25:58 GMT and should not be manually modified.
+
+## 5.17.1
+Mon, 30 Jun 2025 08:20:49 GMT
+
+_Version update only_
 
 ## 5.17.0
 Mon, 30 Jun 2025 07:53:40 GMT
