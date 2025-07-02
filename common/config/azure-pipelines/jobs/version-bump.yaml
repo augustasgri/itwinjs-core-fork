@@ -251,7 +251,7 @@ jobs:
           # Add a note to the commit for later recognition
           git notes add -m "$(getVersion.version)" $changesetToRelease
           # Push the note to the remote
-          git push https://$(MYGITHUBTOKEN)@github.com/name/repo refs/notes/commits
+          git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
         displayName: Mark commit for release
 
       - bash: "git push --follow-tags https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $(releaseBranchName)"
