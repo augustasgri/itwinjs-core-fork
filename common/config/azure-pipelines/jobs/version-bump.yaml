@@ -253,8 +253,9 @@ jobs:
           # Add a note to the commit for later recognition
           echo "getVersion.Version is $(getVersion.version)"
           git notes add -m "$(getVersion.version)" $changesetToRelease
-          # Push the note to the remote
-          git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
+          # Force push new notes to remote. Can use force, because we created a note for commit that is not published
+          # yet, so no other notes will be assigned to it. Without force github complains
+          git push -f https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
         displayName: Mark commit for release
 
       - bash: "git push --follow-tags https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $(releaseBranchName)"
