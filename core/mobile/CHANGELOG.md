@@ -1,6 +1,11 @@
 # Change Log - @itwin/core-mobile
 
-This log was last generated on Wed, 02 Jul 2025 11:16:32 GMT and should not be manually modified.
+This log was last generated on Wed, 02 Jul 2025 11:39:54 GMT and should not be manually modified.
+
+## 5.17.6
+Wed, 02 Jul 2025 11:35:02 GMT
+
+_Version update only_
 
 ## 5.17.5
 Wed, 02 Jul 2025 11:11:41 GMT
