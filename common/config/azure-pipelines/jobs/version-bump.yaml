@@ -248,7 +248,9 @@ jobs:
       - bash: |
           # Get the hash on the latest commit
           changesetToRelease=$(git log -1 --format=%H)
+          echo "changesetToRelease is $changesetToRelease"
           # Add a note to the commit for later recognition
+          echo "getVersion.Version is $(getVersion.version)"
           git notes add -m "$(getVersion.version)" $changesetToRelease
           # Push the note to the remote
           git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
