@@ -244,7 +244,7 @@ jobs:
       - ${{ if or(eq(parameters.BumpType, 'minor'), eq(parameters.BumpType, 'patch')) }}:
           - bash: 'git tag -a release/$(getVersion.version) -m "v$(getVersion.version)"'
             displayName: Create git tag
-
+minor change
       - bash: |
           # Get the hash on the latest commit
           changesetToRelease=$(git log -1 --format=%H)
