@@ -2,6 +2,12 @@
   "name": "@itwin/linear-referencing-backend",
   "entries": [
     {
+      "version": "5.17.3",
+      "tag": "@itwin/linear-referencing-backend_v5.17.3",
+      "date": "Wed, 02 Jul 2025 10:49:21 GMT",
+      "comments": {}
+    },
+    {
       "version": "5.17.2",
       "tag": "@itwin/linear-referencing-backend_v5.17.2",
       "date": "Wed, 02 Jul 2025 10:27:53 GMT",
