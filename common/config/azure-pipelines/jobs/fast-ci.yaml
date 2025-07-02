@@ -115,7 +115,7 @@ jobs:
       - checkout: self
         persistCredentials: true
 
-      - bash: git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
+      - bash: git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits:refs/notes/commits
         displayName: git fetch commit notes
 
       - bash: |
