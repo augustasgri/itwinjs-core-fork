@@ -35,26 +35,25 @@ steps:
         echo "Successfully applied deprecation comment updates to master"
       else
         # Merge conflicts: Create branch, set up PR for manual resolution.
-        echo "Cherry-pick operation on master failed (most likely due to merge conflicts). Manual intervention required"
+        echo "##[warning] Cherry-pick operation on master failed (most likely due to merge conflicts). Manual intervention required"
         git cherry-pick --abort
 
         # Create and checkout to conflict handling branch
         conflictBranchName="cherry-pick-conflict-$(date +%y%m%d%H%m%s)"
-        echo "Creating new branch '$conflictBranchName' for manual resolution"
+        echo "##[warning] Creating new branch '$conflictBranchName' for manual resolution"
         git checkout -b $conflictBranchName
 
         # Cherry-pick changes onto conflict handling branch
         git cherry-pick $commitHash
 
-        # Commit and push all changes
+        # Commit ESLint deprecation changes and push everything, including conflicts, for manual resolution.
         git add .
         git commit -m "Add deprecation rule changes with all merge conflicts"
         git push --set-upstream https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName
-        echo "Now manually fix conflicts on branch '$conflictBranchName' and merge changes into master"
-        # git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName:$conflictBranchName
+        echo "##[warning] Branch '$conflictBranchName' created and pushed. It contains all ESLint deprecation changes and cherry-pick conflicts. Manually fix conflicts inside branch and merge changes into master. Draft PR will be created now"
 
         # Create a PR with new conflict branch
-        gh pr create --title "Merge deprecation comment changes into master" --body "This PR contains all changes after running lint-deprecation ESLint rule and merging with master. Manual intervention required: solve conflicts in this branch and merge PR into master. This happened because deprecation comments in master and in release branch could not be merged automatically." --draft --head $conflictBranchName
+        gh pr create --title "Merge deprecation comment changes into master" --body "This PR contains all changes after running lint-deprecation ESLint rule and merging with master. Manual intervention required: solve conflicts in this branch and merge PR into master. This happened because deprecation comments in master and in release branch could not be merged automatically. @augustasgri" --draft --head $conflictBranchName
       fi
     displayName: Perform cherry-pick operation for deprecation changes
     continueOnError: true
