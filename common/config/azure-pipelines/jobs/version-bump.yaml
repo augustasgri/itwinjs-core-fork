@@ -246,6 +246,7 @@ jobs:
             displayName: Create git tag
 
       - bash: |
+          git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
           # Get the hash on the latest commit
           changesetToRelease=$(git log -1 --format=%H)
           echo "changesetToRelease is $changesetToRelease"
