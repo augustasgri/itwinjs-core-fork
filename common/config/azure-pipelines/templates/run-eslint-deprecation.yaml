@@ -15,11 +15,11 @@ steps:
   - bash: |
       if git diff --quiet; then
         echo "changes were made"
-        echo "##vso[task.setvariable variable=exist;isOutput=true]false"
+        echo "##vso[task.setvariable variable=exist]false"
       else
         echo "changes were made"
         git add .
-        echo "##vso[task.setvariable variable=exist;isOutput=true]true"
+        echo "##vso[task.setvariable variable=exist]true"
       fi
     displayName: Determine whether ESLint rule made any changes
     name: eslintChanges
