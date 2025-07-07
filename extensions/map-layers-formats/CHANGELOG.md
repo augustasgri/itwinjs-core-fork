@@ -1,6 +1,11 @@
 # Change Log - @itwin/map-layers-formats
 
-This log was last generated on Wed, 02 Jul 2025 12:22:42 GMT and should not be manually modified.
+This log was last generated on Mon, 07 Jul 2025 14:58:40 GMT and should not be manually modified.
+
+## 5.17.8
+Mon, 07 Jul 2025 14:54:02 GMT
+
+_Version update only_
 
 ## 5.17.7
 Wed, 02 Jul 2025 12:22:42 GMT
