@@ -6,11 +6,23 @@ steps:
     displayName: Change addVersion in ESLint config to current version
     name: getNewVersion
 
+  - bash: git add .
+    displayName: git add .
+
   - bash: node common/scripts/install-run-rush.js lint-deprecation
     displayName: rush lint-deprecation
 
-  - bash: git add .
-    displayName: git add .
+  - bash: |
+      if git diff --quiet; then
+        echo "changes were made"
+        echo "##vso[task.setvariable variable=exist;isOutput=true]false"
+      else
+        echo "changes were made"
+        git add .
+        echo "##vso[task.setvariable variable=exist;isOutput=true]true"
+      fi
+    displayName: Determine whether ESLint rule made any changes
+    name: eslintChanges
 
   - bash: |
       git commit -m "Apply deprecation date rule for v$(getNewVersion.version)"

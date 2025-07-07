@@ -245,14 +245,27 @@ jobs:
           - bash: 'git tag -a release/$(getVersion.version) -m "v$(getVersion.version)"'
             displayName: Create git tag
 
+      - bash: git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits:refs/notes/commits
+        displayName: git fetch refs/notes/commits
+
       - bash: |
-          # Get the hash on the latest commit
-          changesetToRelease=$(git log -1 --format=%H)
-          # Add a note to the commit for later recognition
-          git notes add -m "$(getVersion.version)" $changesetToRelease
-          # Push the note to the remote
-          git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
+          latestCommit=$(git log -1 --format=%H)
+          echo "latestCommit is $latestCommit"
+          git notes append -m "SHOULD_RELEASE" $latestCommit
         displayName: Mark commit for release
+
+      - bash: |
+          latestCommit=$(git log -1 --format=%H)
+          git notes append -m "ESLINT_CHANGES_MADE" $latestCommit
+        displayName: Mark commit for eslint rule changes
+        condition: eq(steps.eslintChanges.outputs.exist, 'true')
+
+      - bash: |
+          # Force push new notes to remote. Can use force, because we created a note for commit that is not yet published,
+          # so it is not overwriting any remote changes
+          # TODO: Try without -f later, maybe fetching syncs it up
+          git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
+        displayName: git push refs/notes/commits
 
       - bash: "git push --follow-tags https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $(releaseBranchName)"
         displayName: Push version bump for release candidate

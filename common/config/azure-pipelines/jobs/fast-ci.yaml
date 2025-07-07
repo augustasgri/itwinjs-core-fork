@@ -106,39 +106,59 @@ jobs:
   #         GITHUB_TOKEN: $(GH_TOKEN)
   #       name: checkForPr
 
-  - job: CheckIfCommitIsVersionBump
+  - job: ParseCommitNotes
     displayName: Check if commit is version bump
-    dependsOn: [] #CheckLinkedPR
+    dependsOn: [] #TODO: CheckLinkedPR
     pool:
       vmImage: ubuntu-latest
     steps:
       - checkout: self
         persistCredentials: true
 
-      - bash: git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
+      - bash: git fetch https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits:refs/notes/commits
         displayName: git fetch commit notes
 
       - bash: |
           commitId="$(Build.SourceVersion)"
           commitNote=$(git notes show $commitId)
           echo "commit note: \"$commitNote\""
-          regex='^([0-9]+\.[0-9]+\.[0-9]+)(-dev\.[0-9]+)?$'
+          echo '##vso[task.setvariable variable=notes;isOutput=true]$commitNote'
+        displayName: Get commit notes
+        name: getCommit
 
-          if [[ $commitNote =~ $regex ]]
+      - bash: |
+          # This note signals that commit should be released to NPM
+          versionBumpRegex='SHOULD_RELEASE'
+          if [[ $(getCommit.notes) =~ $versionBumpRegex ]]
           then
             echo $commitId is a version bump
-            echo '##vso[task.setvariable variable=ShouldPublish;isOutput=true]True'
+            echo '##vso[task.setvariable variable=shouldPublish;isOutput=true]true'
           else
             echo $commitId is not a version bump
-            echo '##vso[task.setvariable variable=ShouldPublish;isOutput=true]False'
+            echo '##vso[task.setvariable variable=shouldPublish;isOutput=true]false'
           fi
-        displayName: Check if commit is a version bump
-        name: isVersionBump
+        displayName: Parse SHOULD_RELEASE note
+        name: releaseNote
+
+      - bash: |
+          # This note signals that ESLint deprecation rule made changes and those
+          # changes should be validated before release
+          deprecationChangesRegex='ESLINT_CHANGES_MADE'
+          if [[ $(getCommit.notes) =~ $deprecationChangesRegex ]]
+          then
+            echo $commitId has deprecation changes
+            echo '##vso[task.setvariable variable=shouldRequireApproval;isOutput=true]True'
+          else
+            echo $commitId does not have deprecation changes
+            echo '##vso[task.setvariable variable=shouldRequireApproval;isOutput=true]False'
+          fi
+        displayName: Parse git notes
+        name: waitNote
 
   - job: WaitForCodeChangeValidation
     displayName: Wait for code change validation
-    dependsOn: CheckIfCommitIsVersionBump
-    condition: and(succeeded(), eq(dependencies.CheckIfCommitIsVersionBump.outputs['isVersionBump.ShouldPublish'], 'true'))
+    dependsOn: ParseCommitNotes
+    condition: and(succeeded(), eq(dependencies.ParseCommitNotes.outputs['waitNote.shouldRequireApproval'], 'true'))
     pool: server
     timeoutInMinutes: 5760 # 4 days
     steps:
@@ -147,9 +167,8 @@ jobs:
         inputs:
           notifyUsers: ""
           instructions: |
-            Current commit is a version bump and it will be released.
-            This check was added as an additional safety mechanism until new changes
-            made in run-eslint-deprecation.yaml mature.
+            Current commit is a version bump and it will be released to npm.
+            This check was added as an additional safety mechanism until new changes made in run-eslint-deprecation.yaml mature.
             Please validate ESLint deprecation date rule changes before approving this check.
             To do so find the commit named "Apply deprecation date rule for vX.X.X" on this branch
             and inspect the changes for any anomalies.
@@ -158,7 +177,7 @@ jobs:
   - job: Build
     dependsOn:
       - WaitForCodeChangeValidation
-      - CheckIfCommitIsVersionBump
+      - ParseCommitNotes
     condition: succeeded()
     strategy:
       matrix:
@@ -195,6 +214,8 @@ jobs:
       #     nodeVersion: 22.x
       # The publish script identifies any new packages not previously published and tags the build
       - template: ../templates/publish.yaml
+        parameters:
+          shouldPublish: eq(dependencies.ParseCommitNotes.outputs['releaseNote.shouldPublish'], 'true')
 
   # - job: PostResult
   #   dependsOn:
