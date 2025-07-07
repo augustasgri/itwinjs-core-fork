@@ -258,7 +258,7 @@ jobs:
           latestCommit=$(git log -1 --format=%H)
           git notes append -m "ESLINT_CHANGES_MADE" $latestCommit
         displayName: Mark commit for eslint rule changes
-        condition: eq(steps.eslintChanges.outputs.exist, 'true')
+        condition: eq(variables['exist'], 'true')
 
       - bash: |
           # Force push new notes to remote. Can use force, because we created a note for commit that is not yet published,
