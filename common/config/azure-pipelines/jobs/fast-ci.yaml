@@ -215,7 +215,7 @@ jobs:
       # The publish script identifies any new packages not previously published and tags the build
       - template: ../templates/publish.yaml
         parameters:
-          shouldPublish: eq(dependencies.ParseCommitNotes.outputs['releaseNote.shouldPublish'], 'true')
+          shouldPublish: $[ eq(dependencies.ParseCommitNotes.outputs['releaseNote.shouldPublish'], 'true') ]
 
   # - job: PostResult
   #   dependsOn:
