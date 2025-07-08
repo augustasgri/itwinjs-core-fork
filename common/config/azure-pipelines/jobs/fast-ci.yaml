@@ -129,8 +129,10 @@ jobs:
       - bash: |
           # This note signals that commit should be released to NPM
           commitId="$(Build.SourceVersion)"
-          versionBumpRegex='SHOULD_RELEASE'
-          if [[ "$(getCommit.notes)" =~ $versionBumpRegex ]]
+          versionBumpRegex="SHOULD_RELEASE"
+          gitNotes="$(getCommit.notes)"
+          echo "Git notes are \"$gitNotes\""
+          if [[ $gitNotes =~ $versionBumpRegex ]]
           then
             echo $commitId is a version bump
             echo '##vso[task.setvariable variable=shouldPublish;isOutput=true]true'
@@ -145,8 +147,10 @@ jobs:
           # This note signals that ESLint deprecation rule made changes and those
           # changes should be validated before release
           commitId="$(Build.SourceVersion)"
-          deprecationChangesRegex='ESLINT_CHANGES_MADE'
-          if [[ "$(getCommit.notes)" =~ $deprecationChangesRegex ]]
+          deprecationChangesRegex="ESLINT_CHANGES_MADE"
+          gitNotes="$(getCommit.notes)"
+          echo "Git notes are \"$gitNotes\""
+          if [[ $gitNotes =~ $deprecationChangesRegex ]]
           then
             echo $commitId has deprecation changes
             echo '##vso[task.setvariable variable=shouldRequireApproval;isOutput=true]True'
