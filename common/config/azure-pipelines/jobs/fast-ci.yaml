@@ -152,7 +152,7 @@ jobs:
             echo $commitId does not have deprecation changes
             echo '##vso[task.setvariable variable=shouldRequireApproval;isOutput=true]False'
           fi
-        displayName: Parse git notes
+        displayName: Parse ESLINT_CHANGES_MADE note
         name: waitNote
 
   - job: WaitForCodeChangeValidation
