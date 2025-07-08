@@ -178,7 +178,7 @@ jobs:
     dependsOn:
       - WaitForCodeChangeValidation
       - ParseCommitNotes
-    condition: and(succeeded('ParseCommitNotes'), not(cancelled()))
+    condition: and(succeeded('ParseCommitNotes'), not(canceled()))
     strategy:
       matrix:
         "Windows_Node_22":
