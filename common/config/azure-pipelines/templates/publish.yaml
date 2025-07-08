@@ -2,13 +2,11 @@ parameters:
   - name: workingDir
     type: string
     default: $(System.DefaultWorkingDirectory)
-  - name: shouldPublish
-    type: boolean
 
 steps:
   - script: Write-Host "Dry-run success"
     displayName: "Dry-run test"
-    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'Schedule', 'Manual'), eq(variables['Agent.OS'], 'Windows_NT'), eq(${{ parameters.shouldPublish }}, true))
+    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'Schedule', 'Manual'), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables.shouldPublishNpm, 'true'))
 
   # - script: node common/scripts/install-run-rush.js publish --publish --pack --include-all
   #   displayName: rush publish pack

@@ -217,8 +217,6 @@ jobs:
       #     nodeVersion: 22.x
       # The publish script identifies any new packages not previously published and tags the build
       - template: ../templates/publish.yaml
-        parameters:
-          shouldPublish: ${{ variables.shouldPublishNpm }}
 
   # - job: PostResult
   #   dependsOn:
