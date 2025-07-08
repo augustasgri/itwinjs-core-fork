@@ -2,6 +2,12 @@
   "name": "@itwin/ecschema-editing",
   "entries": [
     {
+      "version": "5.17.18",
+      "tag": "@itwin/ecschema-editing_v5.17.18",
+      "date": "Tue, 08 Jul 2025 14:59:04 GMT",
+      "comments": {}
+    },
+    {
       "version": "5.17.17",
       "tag": "@itwin/ecschema-editing_v5.17.17",
       "date": "Tue, 08 Jul 2025 14:42:05 GMT",
