@@ -152,7 +152,7 @@ jobs:
             echo $commitId does not have deprecation changes
             echo '##vso[task.setvariable variable=shouldRequireApproval;isOutput=true]False'
           fi
-        displayName: Parse git notes
+        displayName: Parse ESLINT_CHANGES_MADE note
         name: waitNote
 
   - job: WaitForCodeChangeValidation
@@ -178,7 +178,7 @@ jobs:
     dependsOn:
       - WaitForCodeChangeValidation
       - ParseCommitNotes
-    condition: succeeded()
+    condition: and(succeeded('ParseCommitNotes'), not(canceled()))
     strategy:
       matrix:
         "Windows_Node_22":
@@ -202,7 +202,7 @@ jobs:
       clean: all
 
     variables:
-      shouldPublish: $[ eq(dependencies.ParseCommitNotes.outputs['releaseNote.shouldPublish'], 'true') ]
+      shouldPublishNpm: $[ dependencies.ParseCommitNotes.outputs['releaseNote.shouldPublish'] ]
 
     steps:
       - checkout: self
@@ -217,8 +217,6 @@ jobs:
       #     nodeVersion: 22.x
       # The publish script identifies any new packages not previously published and tags the build
       - template: ../templates/publish.yaml
-        parameters:
-          shouldPublish: ${{ variables.shouldPublish }}
 
   # - job: PostResult
   #   dependsOn:
