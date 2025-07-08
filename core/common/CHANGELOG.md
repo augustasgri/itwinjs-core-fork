@@ -1,6 +1,11 @@
 # Change Log - @itwin/core-common
 
-This log was last generated on Tue, 08 Jul 2025 11:36:21 GMT and should not be manually modified.
+This log was last generated on Tue, 08 Jul 2025 14:42:05 GMT and should not be manually modified.
+
+## 5.17.17
+Tue, 08 Jul 2025 14:42:05 GMT
+
+_Version update only_
 
 ## 5.17.16
 Tue, 08 Jul 2025 11:36:21 GMT
