@@ -2,6 +2,12 @@
   "name": "@itwin/webgl-compatibility",
   "entries": [
     {
+      "version": "5.17.17",
+      "tag": "@itwin/webgl-compatibility_v5.17.17",
+      "date": "Tue, 08 Jul 2025 14:42:05 GMT",
+      "comments": {}
+    },
+    {
       "version": "5.17.16",
       "tag": "@itwin/webgl-compatibility_v5.17.16",
       "date": "Tue, 08 Jul 2025 11:36:22 GMT",

@@ -2,6 +2,12 @@
   "name": "@itwin/frontend-devtools",
   "entries": [
     {
+      "version": "5.17.17",
+      "tag": "@itwin/frontend-devtools_v5.17.17",
+      "date": "Tue, 08 Jul 2025 14:42:05 GMT",
+      "comments": {}
+    },
+    {
       "version": "5.17.16",
       "tag": "@itwin/frontend-devtools_v5.17.16",
       "date": "Tue, 08 Jul 2025 11:36:21 GMT",
