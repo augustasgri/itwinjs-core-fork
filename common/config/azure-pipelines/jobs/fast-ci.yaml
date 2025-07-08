@@ -132,7 +132,7 @@ jobs:
           versionBumpRegex="SHOULD_RELEASE"
           gitNotes="$(getCommit.notes)"
           echo "Git notes are \"$gitNotes\""
-          if [[ $gitNotes =~ $versionBumpRegex ]]
+          if [[ $(getCommit.notes) =~ $versionBumpRegex ]]
           then
             echo $commitId is a version bump
             echo '##vso[task.setvariable variable=shouldPublish;isOutput=true]true'
@@ -150,7 +150,7 @@ jobs:
           deprecationChangesRegex="ESLINT_CHANGES_MADE"
           gitNotes="$(getCommit.notes)"
           echo "Git notes are \"$gitNotes\""
-          if [[ $gitNotes =~ $deprecationChangesRegex ]]
+          if [[ $(getCommit.notes) =~ $deprecationChangesRegex ]]
           then
             echo $commitId has deprecation changes
             echo '##vso[task.setvariable variable=shouldRequireApproval;isOutput=true]True'
