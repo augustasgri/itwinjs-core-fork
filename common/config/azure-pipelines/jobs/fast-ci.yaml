@@ -201,6 +201,9 @@ jobs:
     workspace:
       clean: all
 
+    variables:
+      shouldPublish: $[ eq(dependencies.ParseCommitNotes.outputs['releaseNote.shouldPublish'], 'true') ]
+
     steps:
       - checkout: self
         clean: true
@@ -215,7 +218,7 @@ jobs:
       # The publish script identifies any new packages not previously published and tags the build
       - template: ../templates/publish.yaml
         parameters:
-          shouldPublish: $[ eq(dependencies.ParseCommitNotes.outputs['releaseNote.shouldPublish'], 'true') ]
+          shouldPublish: ${{ variables.shouldPublish }}
 
   # - job: PostResult
   #   dependsOn:
