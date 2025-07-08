@@ -4,6 +4,10 @@ parameters:
     default: $(System.DefaultWorkingDirectory)
 
 steps:
+  - script: echo "Dry-run success Mac"
+    displayName: "Dry-run test"
+    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'Schedule', 'Manual'), eq(variables.shouldPublishNpm, 'true'))
+
   - script: Write-Host "Dry-run success"
     displayName: "Dry-run test"
     condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'Schedule', 'Manual'), eq(variables['Agent.OS'], 'Windows_NT'), eq(variables.shouldPublishNpm, 'true'))
