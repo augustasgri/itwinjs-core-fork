@@ -43,6 +43,7 @@ export enum LockState {
    * Holding an exclusive lock on an "owner" (a model or a parent element), implicitly exclusively locks all its members.
    */
   Exclusive = 2,
+  Add=3,
 }
 
 /**
