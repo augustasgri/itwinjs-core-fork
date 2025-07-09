@@ -14,15 +14,14 @@ steps:
 
   - bash: |
       if git diff --quiet; then
-        echo "changes were made"
-        echo "##vso[task.setvariable variable=exist]false"
+        echo "No deprecation comment changes were made"
+        echo "##vso[task.setvariable variable=deprecationCommentChanges]false"
       else
-        echo "changes were made"
+        echo "Deprecation comment changes were made"
         git add .
-        echo "##vso[task.setvariable variable=exist]true"
+        echo "##vso[task.setvariable variable=deprecationCommentChanges]true"
       fi
     displayName: Determine whether ESLint rule made any changes
-    name: eslintChanges
 
   - bash: |
       git commit -m "Apply deprecation date rule for v$(getNewVersion.version)"
@@ -58,7 +57,7 @@ steps:
         # Cherry-pick changes onto conflict handling branch
         git cherry-pick $commitHash
 
-        # Commit ESLint deprecation changes and push everything, including conflicts, for manual resolution.
+        # Commit ESLint deprecation changes and push merge conflict to conflict handling branch for manual resolution.
         git add .
         git commit -m "Add deprecation rule changes with all merge conflicts"
         git push --set-upstream https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork $conflictBranchName

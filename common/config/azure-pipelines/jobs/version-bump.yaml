@@ -250,20 +250,18 @@ jobs:
 
       - bash: |
           latestCommit=$(git log -1 --format=%H)
-          echo "latestCommit is $latestCommit"
-          git notes append -m "SHOULD_RELEASE" $latestCommit
+          echo "Applying SHOULD_PUBLISH note to commit $latestCommit"
+          git notes append -m "SHOULD_PUBLISH" $latestCommit
         displayName: Mark commit for release
 
       - bash: |
           latestCommit=$(git log -1 --format=%H)
-          git notes append -m "ESLINT_CHANGES_MADE" $latestCommit
+          echo "Applying DEPRECATION_COMMENT_CHANGES note to commit $latestCommit"
+          git notes append -m "DEPRECATION_COMMENT_CHANGES" $latestCommit
         displayName: Mark commit for eslint rule changes
-        condition: eq(variables['exist'], 'true')
+        condition: eq(variables['deprecationCommentChanges'], 'true')
 
       - bash: |
-          # Force push new notes to remote. Can use force, because we created a note for commit that is not yet published,
-          # so it is not overwriting any remote changes
-          # TODO: Try without -f later, maybe fetching syncs it up
           git push https://$(MYGITHUBTOKEN)@github.com/augustasgri/itwinjs-core-fork refs/notes/commits
         displayName: git push refs/notes/commits
 

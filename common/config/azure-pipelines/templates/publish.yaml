@@ -4,8 +4,12 @@ parameters:
     default: $(System.DefaultWorkingDirectory)
 
 steps:
-  - script: echo "Dry-run success Mac"
-    displayName: "Dry-run test"
+  - script: echo "DRY-RUN this SHOULD NOT RUN"
+    displayName: "Dry-run negative test MAC"
+    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'Schedule', 'Manual'), eq(variables.shouldPublishNpm, 'false'))
+
+  - script: echo "DRY-RUN this should run"
+    displayName: "Dry-run positive test MAC"
     condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'Schedule', 'Manual'), eq(variables.shouldPublishNpm, 'true'))
 
   - script: Write-Host "Dry-run success"
