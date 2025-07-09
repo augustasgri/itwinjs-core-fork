@@ -1,6 +1,11 @@
 # Change Log - @itwin/workspace-editor
 
-This log was last generated on Wed, 09 Jul 2025 07:29:27 GMT and should not be manually modified.
+This log was last generated on Wed, 09 Jul 2025 07:46:49 GMT and should not be manually modified.
+
+## 5.17.20
+Wed, 09 Jul 2025 07:46:49 GMT
+
+_Version update only_
 
 ## 5.17.19
 Wed, 09 Jul 2025 07:29:27 GMT
