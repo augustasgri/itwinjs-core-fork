@@ -201,7 +201,7 @@ jobs:
       clean: all
 
     variables:
-      shouldPublishNpm: $[ dependencies.ParseCommitNotes.outputs['releaseNote.shouldPublish'] ]
+      shouldPublishNpm: $[ dependencies.ParseCommitNotes.outputs['publishNote.shouldPublish'] ]
 
     steps:
       - checkout: self
